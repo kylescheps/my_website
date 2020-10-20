@@ -6,7 +6,7 @@ slug: project-2
 categories: []
 tags: []
 description: ''
-image: ''
+image: Shanghai.jpg
 keywords: ''
 draft: no
 ---

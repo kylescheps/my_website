@@ -6,7 +6,7 @@ slug: project-1
 categories: []
 tags: []
 description: ''
-image: 'yield_curve_parable.jpg'
+image: Yields_pic.jpg
 keywords: ''
 draft: no
 ---
@@ -51,8 +51,7 @@ Every so often, we hear warnings from commentators on the "inverted yield curve"
 The question is, is this a self-fulfilling prophecy or not? The wonderful and beautfiul short story below, illustrates what we mean by that:
 
 ```{r yield_curve_parable.jpg, echo=FALSE, out.width="100%"}
-knitr::include_graphics(here::here("static","images", "yield_curve_parable.jpg"))
-
+knitr::include_graphics(here::here("static","img","yield_curve_parable.jpg"))
 ```
 
 

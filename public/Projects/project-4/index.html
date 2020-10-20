@@ -1,0 +1,354 @@
+<!DOCTYPE HTML>
+<html>
+
+    <head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<meta name="description" content="Kyle">
+	<meta name="author" content="Kyle">
+	<meta name="generator" content="Hugo 0.75.1" />
+	<title>Omega Group plc - Pay Discrimination Analysis &middot; Kyle</title>
+	<!-- Stylesheets -->
+	
+	<link rel="stylesheet" href="/css/main.css"/>
+	
+	
+
+	
+
+	<!-- Custom Fonts -->
+	<link href="/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+	
+	<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+	<link rel="icon" type="image/x-icon" href="/favicon.ico">
+	
+
+	<!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+	<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+	<!--[if lt IE 9]>
+	<script src="js/ie/html5shiv.js"></script>
+	<script src="js/ie/html5shiv.jsrespond.min.js"></script>
+	<![endif]-->
+</head>
+
+    <body>
+
+    <!-- Wrapper -->
+        <div id="wrapper">
+
+            <!-- Header -->
+    <header id="header" class="alt">
+        <a href="/" class="logo"><strong>My website</strong> <span></span></a>
+        <nav>
+            <a href="#menu">Menu</a>
+        </nav>
+    </header>
+
+<!-- Menu -->
+    <nav id="menu">
+        <ul class="links">
+            
+                <li><a href="/">Home</a></li>
+            
+                <li><a href="/projects">Projects</a></li>
+            
+                <li><a href="/elements.html">Elements</a></li>
+            
+
+        </ul>
+        <ul class="actions vertical">
+            
+                <li><a href="/blogs" class="button special fit">Get Started</a></li>
+            
+            
+        </ul>
+    </nav>
+
+        <!-- Main -->
+            <div id="main" class="alt">
+
+                
+                    <section id="one">
+                        <div class="inner">
+                            <header class="major">
+                                <h1>Omega Group plc - Pay Discrimination Analysis</h1>
+                            </header>
+                            
+                                <span class="image main"><img src="/img/Projects/Omega_pic.jpg" alt="" /></span>
+                            
+                            
+<script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
+
+
+<p>At the last board meeting of Omega Group Plc., the headquarters of a large multinational company, the issue was raised that women were being discriminated in the company, in the sense that the salaries were not the same for male and female executives. A quick analysis of a sample of 50 employees (of which 24 men and 26 women) revealed that the average salary for men was about 8,700 higher than for women. This seemed like a considerable difference, so it was decided that a further analysis of the company salaries was warranted.</p>
+<p>Our objective is to find out whether there is indeed a significant difference between the salaries of men and women, and whether the difference is due to discrimination or whether it is based on another, possibly valid, determining factor.</p>
+<p>We begin by loading the data.</p>
+<pre class="r"><code># load and read the data
+omega &lt;- read_csv(here::here(&quot;data&quot;, &quot;omega.csv&quot;))
+
+# examine the data frame
+glimpse(omega) </code></pre>
+<pre><code>## Rows: 50
+## Columns: 3
+## $ salary     &lt;dbl&gt; 81894, 69517, 68589, 74881, 65598, 76840, 78800, 70033, 63…
+## $ gender     &lt;chr&gt; &quot;male&quot;, &quot;male&quot;, &quot;male&quot;, &quot;male&quot;, &quot;male&quot;, &quot;male&quot;, &quot;male&quot;, &quot;m…
+## $ experience &lt;dbl&gt; 16, 25, 15, 33, 16, 19, 32, 34, 1, 44, 7, 14, 33, 19, 24, …</code></pre>
+<div id="relationship-salary---gender" class="section level2">
+<h2>Relationship Salary - Gender ?</h2>
+<p>The data frame <code>omega</code> contains the salaries for the sample of 50 executives in the company. We investigate whether there is a significant difference between the salaries of the male and female executives.</p>
+<p>We calculate summary statistics on salary by gender, including the mean, SD, sample size, the t-critical, the SE, the margin of error, and the low/high endpoints of a 95% condifence interval</p>
+<pre class="r"><code># Summary Statistics of salary by gender
+mosaic::favstats (salary ~ gender, data=omega)</code></pre>
+<pre><code>##   gender   min    Q1 median    Q3   max  mean   sd  n missing
+## 1 female 47033 60338  64618 70033 78800 64543 7567 26       0
+## 2   male 54768 68331  74675 78568 84576 73239 7463 24       0</code></pre>
+<pre class="r"><code># Dataframe with two rows (male-female) and having as columns gender, mean, SD, sample size, 
+# the t-critical value, the standard error, the margin of error, 
+# and the low/high endpoints of a 95% condifence interval
+dataframe &lt;- omega %&gt;%
+
+  # group by gender
+  group_by(gender) %&gt;% 
+  
+  # calculate the confidence interval
+  summarise(mean=mean(salary),
+            SD=sd(salary),
+            sample_size=n(),
+            t_critical=qt(0.975,sample_size-1),
+            se=parameters::standard_error(salary),
+            margin_of_error=t_critical*se,
+            ci_low=mean-margin_of_error,
+            ci_high=mean+margin_of_error) 
+
+# show the result
+dataframe</code></pre>
+<pre><code>## # A tibble: 2 x 9
+##   gender   mean    SD sample_size t_critical    se margin_of_error ci_low
+##   &lt;chr&gt;   &lt;dbl&gt; &lt;dbl&gt;       &lt;int&gt;      &lt;dbl&gt; &lt;dbl&gt;           &lt;dbl&gt;  &lt;dbl&gt;
+## 1 female 64543. 7567.          26       2.06 1484.           3056. 61486.
+## 2 male   73239. 7463.          24       2.07 1523.           3151. 70088.
+## # … with 1 more variable: ci_high &lt;dbl&gt;</code></pre>
+<p>From the table, we can see that there is a noticeable difference between salary of male and female (i.e. around 73k versus 65k). The 95% confidence interval for female salary mean is 61k to 68k, while that for male salary mean is 70k to 76k. The two intervals do not overlap. It is quite clear that the male salary tend to be higher than female one. The following hypothesis test would further help us to test again whether the difference is significant mathematically.</p>
+<p>We now run a hypothesis test, using two methods respectively. First, we use the <code>t.test()</code> function, and then, we corroborate using the simulation method from the <code>infer</code> package. Our null hypothesis is that the true difference between mean salary for males and females is zero.</p>
+<pre class="r"><code># hypothesis testing using t.test() 
+t.test(salary~gender, data=omega)</code></pre>
+<pre><code>## 
+##  Welch Two Sample t-test
+## 
+## data:  salary by gender
+## t = -4, df = 48, p-value = 2e-04
+## alternative hypothesis: true difference in means is not equal to 0
+## 95 percent confidence interval:
+##  -12973  -4420
+## sample estimates:
+## mean in group female   mean in group male 
+##                64543                73239</code></pre>
+<pre class="r"><code># initialise the test
+obs_diff &lt;- omega %&gt;% 
+  specify(salary ~ gender) %&gt;% 
+  calculate(stat = &quot;diff in means&quot;, order = c(&quot;male&quot;,&quot;female&quot;))
+
+# hypothesis testing using infer package (details in lec slide58, 61, also the question1)
+# stimulate the null hypothesis
+null_diff &lt;- omega %&gt;% 
+  specify(salary ~ gender) %&gt;%
+  hypothesise(null=&quot;independence&quot;) %&gt;% #hypothesis of no difference
+  generate(reps = 1000, type = &quot;permute&quot;) %&gt;%
+  calculate(stat=&quot;diff in means&quot;, order = c(&quot;male&quot;,&quot;female&quot;)) 
+
+# visualise the distribution and check the p-value
+null_diff %&gt;%
+  visualise()+
+  shade_p_value(obs_stat = obs_diff, direction = &quot;two-sided&quot;) +
+  theme_wsj(base_size = 9)</code></pre>
+<p><img src="/Projects/2020-10-20-project-4_files/figure-html/hypothesis_testing-1.png" width="1152" style="display: block; margin: auto;" /></p>
+<pre class="r"><code># calculate the p-value
+null_diff %&gt;%
+  get_p_value(obs_stat = obs_diff, direction = &quot;two-sided&quot;)</code></pre>
+<pre><code>## # A tibble: 1 x 1
+##   p_value
+##     &lt;dbl&gt;
+## 1       0</code></pre>
+<p>From both tests, we can see that the p_value is 2e-4, which is small enough to reject the null hypothesis (typically must be below 5%). In addition, from the t.test, it is shown that the range of 95% CI is not near 0. It further corroborates that there is significant difference between male and female salary probably due to gender.</p>
+</div>
+<div id="relationship-experience---gender" class="section level2">
+<h2>Relationship Experience - Gender?</h2>
+<p>At the board meeting, someone raised the issue that there was indeed a substantial difference between male and female salaries, but that this was attributable to other reasons such as differences in experience. A questionnaire send out to the 50 executives in the sample reveals that the average experience of the men is approximately 21 years, whereas the women only have about 7 years experience on average (see table below).</p>
+<pre class="r"><code># Summary Statistics of salary by gender
+favstats (experience ~ gender, data=omega)</code></pre>
+<pre><code>##   gender min    Q1 median   Q3 max  mean    sd  n missing
+## 1 female   0  0.25    3.0 14.0  29  7.38  8.51 26       0
+## 2   male   1 15.75   19.5 31.2  44 21.12 10.92 24       0</code></pre>
+<p><strong>Based on this evidence, can you conclude that there is a significant difference between the experience of the male and female executives? Perform similar analyses as in the previous section. Does your conclusion validate or endanger your conclusion about the difference in male and female salaries?</strong></p>
+<p>Based on this evidence, we perform a similar analysis as above, to find whether there is indeed a significant difference between the experience of the male and female analysis. The Null Hypothesis in this case would be that the true difference in mean (not due to statistical fluctuations) between the experience of male and female executives is zero. The Alternative Hypothesis states that there is a true difference in this mean (it’s not just statistical fluctuation).</p>
+<p>We conduct the following analysis</p>
+<pre class="r"><code>#calculate confidence interval
+dataframe2 &lt;- omega %&gt;%
+  group_by(gender) %&gt;% 
+  summarise(mean=mean(experience),
+            SD=sd(experience),
+            sample_size=n(),
+            t_critical=qt(0.975,sample_size-1),
+            se=parameters::standard_error(experience),
+            margin_of_error=t_critical*se,
+            ci_low=mean-margin_of_error,
+            ci_high=mean+margin_of_error) 
+
+dataframe2</code></pre>
+<pre><code>## # A tibble: 2 x 9
+##   gender  mean    SD sample_size t_critical    se margin_of_error ci_low ci_high
+##   &lt;chr&gt;  &lt;dbl&gt; &lt;dbl&gt;       &lt;int&gt;      &lt;dbl&gt; &lt;dbl&gt;           &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;
+## 1 female  7.38  8.51          26       2.06  1.67            3.44   3.95    10.8
+## 2 male   21.1  10.9           24       2.07  2.23            4.61  16.5     25.7</code></pre>
+<pre class="r"><code># hypothesis testing using t.test() 
+t.test(experience~gender, data=omega)</code></pre>
+<pre><code>## 
+##  Welch Two Sample t-test
+## 
+## data:  experience by gender
+## t = -5, df = 43, p-value = 1e-05
+## alternative hypothesis: true difference in means is not equal to 0
+## 95 percent confidence interval:
+##  -19.35  -8.13
+## sample estimates:
+## mean in group female   mean in group male 
+##                 7.38                21.12</code></pre>
+<pre class="r"><code>#initialise the test
+obs_diff2 &lt;- omega %&gt;% 
+  specify(experience ~ gender) %&gt;% 
+  calculate(stat = &quot;diff in means&quot;, order = c(&quot;male&quot;,&quot;female&quot;))
+
+# hypothesis testing using infer package (similar with the previous question)
+#stimulate the null hypothesis
+null_diff2 &lt;- omega %&gt;% 
+  specify(experience ~ gender) %&gt;%
+  hypothesise(null=&quot;independence&quot;) %&gt;% #hypothesis of no difference
+  generate(reps = 1000, type = &quot;permute&quot;) %&gt;%
+  calculate(stat=&quot;diff in means&quot;, order = c(&quot;male&quot;,&quot;female&quot;)) 
+
+null_diff2 %&gt;%
+  visualise()+
+  shade_p_value(obs_stat = obs_diff2, direction = &quot;two-sided&quot;) +
+  theme_wsj(base_size = 9) +
+  labs(title = &quot;Null Distribution&quot;,
+       subtitle = &quot;Mean difference for experience between males and females&quot;) </code></pre>
+<p><img src="/Projects/2020-10-20-project-4_files/figure-html/gender_and_experience-1.png" width="1152" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>null_diff2 %&gt;%
+  get_p_value(obs_stat = obs_diff2, direction = &quot;two-sided&quot;)</code></pre>
+<pre><code>## # A tibble: 1 x 1
+##   p_value
+##     &lt;dbl&gt;
+## 1       0</code></pre>
+<p>From the results, we can see there is a significant difference between the experiences of females and males. We reject the null hypothesis.</p>
+<p>So far, we can conclude that female salary is lower than male salary to a significant level (i.e. not just random fluctuations), with reasonable certainty. We can also conclude that female experience is lower than male experience to a significant level with reasonable certainty. The data has shown this correlation, and therefore endangers our previous conclusion about male and female salaries. However, this is not hard proof. It is not obvious whether we can conclude that there exists <em>causality</em> between experience levels and salary. This means that we need further analysis before we can say for sure which of the two factors (gender or experience) is the one which truly affects the salary.</p>
+</div>
+<div id="relationship-salary---experience" class="section level2">
+<h2>Relationship Salary - Experience ?</h2>
+<p>Someone at the meeting argues that clearly, a more thorough analysis of the relationship between salary and experience is required before any conclusion can be drawn about whether there is any gender-based salary discrimination in the company.</p>
+<p>We analyse the relationship between salary and experience by drawing a scatterplot to visually inspect the data</p>
+<pre class="r"><code># check the correlation between these variables
+cor(omega$salary,omega$experience)</code></pre>
+<pre><code>## [1] 0.803</code></pre>
+<pre class="r"><code># draw a plot showing experience level vs. salary
+ggplot(omega, aes(x=salary, y=experience))+
+  
+  #draw it as a scatterplot
+  geom_point()+ 
+  
+  #smooth trendline. Makes it more clear to view if there is any relationship
+  geom_smooth(color=&quot;blue&quot;)+  
+  
+  # add labels
+  labs(title=&quot;Relationship between salary and experience&quot;,
+       x=&quot;Salary&quot;,
+       y=&quot;Experience (years)&quot;,
+       caption=&quot;Source: Omega Group Plc.&quot;) +
+  
+  #theme wsj
+  theme_wsj(base_size = 7) +
+  
+  theme(
+    plot.title = element_text(size = 14),
+    plot.subtitle = element_text(size=12),
+    axis.title.x = element_text(size = 12),
+    axis.title.y=element_text(size=12),
+    axis.text.x = element_text(size = 10),
+    axis.text.y = element_text(size = 10) 
+    ) </code></pre>
+<p><img src="/Projects/2020-10-20-project-4_files/figure-html/salary_exp_scatter-1.png" width="1152" style="display: block; margin: auto;" /></p>
+<p>From the graph, it seems that there is a positive relationship between these two. The correlation is 0.803. Therefore, this does put in question the causal link between gender and salary.</p>
+</div>
+<div id="check-correlations-between-the-data" class="section level2">
+<h2>Check correlations between the data</h2>
+<p>We can use <code>GGally:ggpairs()</code> to create a scatterplot and correlation matrix.</p>
+<p>Sidenote:
+As an exception, we’ll preserve your beautiful graph Kostis, we won’t turn this one into theme wsj ;)</p>
+<pre class="r"><code>omega %&gt;% 
+  #order variables they will appear in ggpairs()
+  select(gender, experience, salary) %&gt;% 
+  ggpairs(aes(colour=gender, alpha = 0.3))+
+  theme_bw()</code></pre>
+<p><img src="/Projects/2020-10-20-project-4_files/figure-html/ggpairs-1.png" width="1152" style="display: block; margin: auto;" /></p>
+<p>Overall, the graphs testify again that female have lower experiences and salaries than male. However, it is worth noticing that the relationship between salary and experience is much higher for female (0.812) than male (0.661). This may indicate that sometimes it is possible for male with the same experience to get more diverse higher or lower salaries.
+It is more clear when we look at the bottom-middle graph, which indicates the relationship between experience and salary by gender. With the same experience, the range of salary for men is broader than the range of salary for women.
+To be honest, we think it is still hard to determine the exact causality relationship between either experience and salary, or gender and salary. In the histogram, it seems experiences of female concentrate in the lower range, but the salary received is in the middle range. The experiences of male is much more diverse, while the salaries concentrates in the higher range. It is possible that the gender still take effects on salary.</p>
+</div>
+
+                        </div>
+                    </section>
+            <!-- Disqus Inject -->
+                
+            </div>
+            
+        <!-- Footer -->
+            
+                <!-- Footer -->
+    <footer id="footer">
+        <div class="inner">
+            <ul class="icons">
+                
+                    <li><a href="https://www.twitter.com" class="icon alt fa-twitter" target="_blank"><span class="label">Twitter</span></a></li>
+                
+                    <li><a href="https://www.facebook.com" class="icon alt fa-facebook" target="_blank"><span class="label">Facebook</span></a></li>
+                
+                    <li><a href="https://www.instagram.com" class="icon alt fa-instagram" target="_blank"><span class="label">Instagram</span></a></li>
+                
+                    <li><a href="https://www.github.com" class="icon alt fa-github" target="_blank"><span class="label">GitHub</span></a></li>
+                
+                    <li><a href="https://www.linkedin.com" class="icon alt fa-linkedin" target="_blank"><span class="label">LinkedIn</span></a></li>
+                
+            </ul>
+            <ul class="copyright">
+                <li>&copy; Company Name</li>
+                
+                <li>Design:  <a href="https://www.html5up.net">HTML5 UP</a></li>
+                
+            </ul>
+        </div>
+    </footer>
+
+            
+        </div>
+
+    <!-- Scripts -->
+        <!-- Scripts -->
+    <!-- jQuery -->
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jquery.scrolly.min.js"></script>
+    <script src="/js/jquery.scrollex.min.js"></script>
+    <script src="/js/skel.min.js"></script>
+    <script src="/js/util.js"></script>
+
+    
+
+    <!-- Main JS -->
+    <script src="/js/main.js"></script>
+
+    
+
+    
+
+    </body>
+</html>

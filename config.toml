@@ -48,12 +48,8 @@ disqusShortname = ""
       url = "#"
 
     [[params.navigation.links]]
-      name = "Blogs"
-      url = "blogs"
-
-    [[params.navigation.links]]
-      name = "Generic Blog"
-      url = "blogs/ipsum"
+      name = "Projects"
+      url = "projects"
 
     [[params.navigation.links]]
       name = "Elements"
@@ -71,12 +67,6 @@ disqusShortname = ""
       name = "Get Started"
       url = "blogs"
 
-    # Button Style 2
-    [[params.navigation.button2]]
-      name = "Log In"
-      url = "#"
-
-
   # Banner section
   [params.banner]
     # To change the background image on the homepage banner, replace 'banner.jpg' in
@@ -93,39 +83,39 @@ disqusShortname = ""
     
     [[params.tiles.showcase]]
       title = "About Me"
-      subtitle = ""
-      image = ""
-      url = ""
+      subtitle = "My CV"
+      image = "About_Me.JPG"
+      url = "Projects/My_CV.pdf"
 
     [[params.tiles.showcase]]
       title = "Modelling US Yield Curves"
       subtitle = ""
-      image = ""
+      image = "Yields_pic.jpg"
       url = "Projects/project-1"
 
     [[params.tiles.showcase]]
-      title = "AirBnB Regression Analysis"
-      subtitle = ""
-      image = ""
+      title = "Shanghai AirBnB Analysis"
+      subtitle = "Regression"
+      image = "Shanghai.jpg"
       url = "Projects/project-2"
 
     [[params.tiles.showcase]]
-      title = "Ipsum"
-      subtitle = "Nisl Sed Aliquam"
-      image = "pic04.jpg"
-      url = "blogs/ipsum"
+      title = "GDP components over time and among countries"
+      subtitle = ""
+      image = "GDP.jpg"
+      url = "Projects/project-3"
 
     [[params.tiles.showcase]]
-      title = "Consequat"
-      subtitle = "Ipsum Dolor Sit Amet"
-      image = "pic05.jpg"
-      url = "blogs/ipsum"
+      title = "Omega Group plc - Pay Discrimination Analysis"
+      subtitle = ""
+      image = "Omega_pic.jpg"
+      url = "Projects/project-4"
 
     [[params.tiles.showcase]]
-      title = "Etiam"
-      subtitle = "Feugiat Amet Tempus"
-      image = "pic06.jpg"
-      url = "blogs/ipsum"
+      title = "Youth Risk Behavior Surveillance"
+      subtitle = ""
+      image = "Youth_pic.jpg"
+      url = "Projects/project-5"
     # You can make more showcases by copy and pasting the code above
 
   [params.blog]
@@ -138,14 +128,10 @@ disqusShortname = ""
   # Section Type Two
   [params.two]
     enable = true
-    title = "Massa libero"
-    subtitle = """Nullam et orci eu lorem consequat tincidunt vivamus et sagittis libero. 
-    Mauris aliquet magna magna sed nunc rhoncus pharetra. 
-    Pellentesque condimentum sem. In efficitur ligula tate urna. Maecenas laoreet massa vel lacinia pellentesque lorem ipsum dolor. 
-    Nullam et orci eu lorem consequat tincidunt. Vivamus et sagittis libero.
-    Mauris aliquet magna magna sed nunc rhoncus amet pharetra et feugiat tempus."""
+    title = "Here you can find a small summary for each of the projects"
+    subtitle = """These were carried out in Rmarkdown."""
     buttonText = "Get Started"
-    url = "blogs"
+    url = "Projects"
 
 
   # Contact section

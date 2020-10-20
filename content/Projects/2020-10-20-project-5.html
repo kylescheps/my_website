@@ -1,0 +1,614 @@
+---
+title: "Youth Risk Behavior Surveillance"
+author: Kyle Coding R
+date: '2020-10-20'
+slug: project-5
+categories: []
+tags: []
+description: ''
+image: Youth_pic.jpg
+keywords: ''
+draft: no
+---
+
+<script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
+
+
+<div id="section" class="section level1">
+<h1></h1>
+<p>Every two years, the Centers for Disease Control and Prevention conduct the <a href="https://www.cdc.gov/healthyyouth/data/yrbs/index.htm">Youth Risk Behavior Surveillance System (YRBSS)</a> survey, where it takes data from high schoolers (9th through 12th grade), to analyze health patterns. We will work with a selected group of variables from a random sample of observations during one of the years the YRBSS was conducted.</p>
+<div id="load-the-data" class="section level2">
+<h2>Load the data</h2>
+<p>This data is part of the <code>openintro</code> textbook and we can load and inspect it. There are observations on 13 different variables, some categorical and some numerical. The meaning of each variable can be found by bringing up the help file:</p>
+<pre class="r"><code>data(yrbss) #loads data
+glimpse(yrbss) #glimpses data</code></pre>
+<pre><code>## Rows: 13,583
+## Columns: 13
+## $ age                      &lt;int&gt; 14, 14, 15, 15, 15, 15, 15, 14, 15, 15, 15, …
+## $ gender                   &lt;chr&gt; &quot;female&quot;, &quot;female&quot;, &quot;female&quot;, &quot;female&quot;, &quot;fem…
+## $ grade                    &lt;chr&gt; &quot;9&quot;, &quot;9&quot;, &quot;9&quot;, &quot;9&quot;, &quot;9&quot;, &quot;9&quot;, &quot;9&quot;, &quot;9&quot;, &quot;9&quot;,…
+## $ hispanic                 &lt;chr&gt; &quot;not&quot;, &quot;not&quot;, &quot;hispanic&quot;, &quot;not&quot;, &quot;not&quot;, &quot;not…
+## $ race                     &lt;chr&gt; &quot;Black or African American&quot;, &quot;Black or Afric…
+## $ height                   &lt;dbl&gt; NA, NA, 1.73, 1.60, 1.50, 1.57, 1.65, 1.88, …
+## $ weight                   &lt;dbl&gt; NA, NA, 84.4, 55.8, 46.7, 67.1, 131.5, 71.2,…
+## $ helmet_12m               &lt;chr&gt; &quot;never&quot;, &quot;never&quot;, &quot;never&quot;, &quot;never&quot;, &quot;did not…
+## $ text_while_driving_30d   &lt;chr&gt; &quot;0&quot;, NA, &quot;30&quot;, &quot;0&quot;, &quot;did not drive&quot;, &quot;did no…
+## $ physically_active_7d     &lt;int&gt; 4, 2, 7, 0, 2, 1, 4, 4, 5, 0, 0, 0, 4, 7, 7,…
+## $ hours_tv_per_school_day  &lt;chr&gt; &quot;5+&quot;, &quot;5+&quot;, &quot;5+&quot;, &quot;2&quot;, &quot;3&quot;, &quot;5+&quot;, &quot;5+&quot;, &quot;5+&quot;…
+## $ strength_training_7d     &lt;int&gt; 0, 0, 0, 0, 1, 0, 2, 0, 3, 0, 3, 0, 0, 7, 7,…
+## $ school_night_hours_sleep &lt;chr&gt; &quot;8&quot;, &quot;6&quot;, &quot;&lt;5&quot;, &quot;6&quot;, &quot;9&quot;, &quot;8&quot;, &quot;9&quot;, &quot;6&quot;, &quot;&lt;5…</code></pre>
+<pre class="r"><code>skimr::skim(yrbss) #Using function skim from skimr package to find missing values</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-1">Table 1: </span>Data summary</caption>
+<tbody>
+<tr class="odd">
+<td align="left">Name</td>
+<td align="left">yrbss</td>
+</tr>
+<tr class="even">
+<td align="left">Number of rows</td>
+<td align="left">13583</td>
+</tr>
+<tr class="odd">
+<td align="left">Number of columns</td>
+<td align="left">13</td>
+</tr>
+<tr class="even">
+<td align="left">_______________________</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Column type frequency:</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">character</td>
+<td align="left">8</td>
+</tr>
+<tr class="odd">
+<td align="left">numeric</td>
+<td align="left">5</td>
+</tr>
+<tr class="even">
+<td align="left">________________________</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Group variables</td>
+<td align="left">None</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Variable type: character</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">skim_variable</th>
+<th align="right">n_missing</th>
+<th align="right">complete_rate</th>
+<th align="right">min</th>
+<th align="right">max</th>
+<th align="right">empty</th>
+<th align="right">n_unique</th>
+<th align="right">whitespace</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">gender</td>
+<td align="right">12</td>
+<td align="right">1.00</td>
+<td align="right">4</td>
+<td align="right">6</td>
+<td align="right">0</td>
+<td align="right">2</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">grade</td>
+<td align="right">79</td>
+<td align="right">0.99</td>
+<td align="right">1</td>
+<td align="right">5</td>
+<td align="right">0</td>
+<td align="right">5</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">hispanic</td>
+<td align="right">231</td>
+<td align="right">0.98</td>
+<td align="right">3</td>
+<td align="right">8</td>
+<td align="right">0</td>
+<td align="right">2</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">race</td>
+<td align="right">2805</td>
+<td align="right">0.79</td>
+<td align="right">5</td>
+<td align="right">41</td>
+<td align="right">0</td>
+<td align="right">5</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">helmet_12m</td>
+<td align="right">311</td>
+<td align="right">0.98</td>
+<td align="right">5</td>
+<td align="right">12</td>
+<td align="right">0</td>
+<td align="right">6</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">text_while_driving_30d</td>
+<td align="right">918</td>
+<td align="right">0.93</td>
+<td align="right">1</td>
+<td align="right">13</td>
+<td align="right">0</td>
+<td align="right">8</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">hours_tv_per_school_day</td>
+<td align="right">338</td>
+<td align="right">0.98</td>
+<td align="right">1</td>
+<td align="right">12</td>
+<td align="right">0</td>
+<td align="right">7</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">school_night_hours_sleep</td>
+<td align="right">1248</td>
+<td align="right">0.91</td>
+<td align="right">1</td>
+<td align="right">3</td>
+<td align="right">0</td>
+<td align="right">7</td>
+<td align="right">0</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Variable type: numeric</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">skim_variable</th>
+<th align="right">n_missing</th>
+<th align="right">complete_rate</th>
+<th align="right">mean</th>
+<th align="right">sd</th>
+<th align="right">p0</th>
+<th align="right">p25</th>
+<th align="right">p50</th>
+<th align="right">p75</th>
+<th align="right">p100</th>
+<th align="left">hist</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">age</td>
+<td align="right">77</td>
+<td align="right">0.99</td>
+<td align="right">16.16</td>
+<td align="right">1.26</td>
+<td align="right">12.00</td>
+<td align="right">15.0</td>
+<td align="right">16.00</td>
+<td align="right">17.00</td>
+<td align="right">18.00</td>
+<td align="left">▁▂▅▅▇</td>
+</tr>
+<tr class="even">
+<td align="left">height</td>
+<td align="right">1004</td>
+<td align="right">0.93</td>
+<td align="right">1.69</td>
+<td align="right">0.10</td>
+<td align="right">1.27</td>
+<td align="right">1.6</td>
+<td align="right">1.68</td>
+<td align="right">1.78</td>
+<td align="right">2.11</td>
+<td align="left">▁▅▇▃▁</td>
+</tr>
+<tr class="odd">
+<td align="left">weight</td>
+<td align="right">1004</td>
+<td align="right">0.93</td>
+<td align="right">67.91</td>
+<td align="right">16.90</td>
+<td align="right">29.94</td>
+<td align="right">56.2</td>
+<td align="right">64.41</td>
+<td align="right">76.20</td>
+<td align="right">180.99</td>
+<td align="left">▆▇▂▁▁</td>
+</tr>
+<tr class="even">
+<td align="left">physically_active_7d</td>
+<td align="right">273</td>
+<td align="right">0.98</td>
+<td align="right">3.90</td>
+<td align="right">2.56</td>
+<td align="right">0.00</td>
+<td align="right">2.0</td>
+<td align="right">4.00</td>
+<td align="right">7.00</td>
+<td align="right">7.00</td>
+<td align="left">▆▂▅▃▇</td>
+</tr>
+<tr class="odd">
+<td align="left">strength_training_7d</td>
+<td align="right">1176</td>
+<td align="right">0.91</td>
+<td align="right">2.95</td>
+<td align="right">2.58</td>
+<td align="right">0.00</td>
+<td align="right">0.0</td>
+<td align="right">3.00</td>
+<td align="right">5.00</td>
+<td align="right">7.00</td>
+<td align="left">▇▂▅▂▅</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="exploratory-data-analysis" class="section level2">
+<h2>Exploratory Data Analysis</h2>
+<p>We first start with analyzing the <code>weight</code> of participants in kilograms.</p>
+<p><strong>Using visualization and summary statistics, describe the distribution of weights.</strong></p>
+<pre class="r"><code>#find summary statistics
+summary(yrbss) </code></pre>
+<pre><code>##       age          gender             grade             hispanic        
+##  Min.   :12.0   Length:13583       Length:13583       Length:13583      
+##  1st Qu.:15.0   Class :character   Class :character   Class :character  
+##  Median :16.0   Mode  :character   Mode  :character   Mode  :character  
+##  Mean   :16.2                                                           
+##  3rd Qu.:17.0                                                           
+##  Max.   :18.0                                                           
+##  NA&#39;s   :77                                                             
+##      race               height         weight      helmet_12m       
+##  Length:13583       Min.   :1      Min.   : 30    Length:13583      
+##  Class :character   1st Qu.:2      1st Qu.: 56    Class :character  
+##  Mode  :character   Median :2      Median : 64    Mode  :character  
+##                     Mean   :2      Mean   : 68                      
+##                     3rd Qu.:2      3rd Qu.: 76                      
+##                     Max.   :2      Max.   :181                      
+##                     NA&#39;s   :1004   NA&#39;s   :1004                     
+##  text_while_driving_30d physically_active_7d hours_tv_per_school_day
+##  Length:13583           Min.   :0.0          Length:13583           
+##  Class :character       1st Qu.:2.0          Class :character       
+##  Mode  :character       Median :4.0          Mode  :character       
+##                         Mean   :3.9                                 
+##                         3rd Qu.:7.0                                 
+##                         Max.   :7.0                                 
+##                         NA&#39;s   :273                                 
+##  strength_training_7d school_night_hours_sleep
+##  Min.   :0            Length:13583            
+##  1st Qu.:0            Class :character        
+##  Median :3            Mode  :character        
+##  Mean   :3                                    
+##  3rd Qu.:5                                    
+##  Max.   :7                                    
+##  NA&#39;s   :1176</code></pre>
+<pre class="r"><code>##plot
+
+#plot showing distribution of weights in the data
+ggplot(yrbss, aes (weight) ) +
+
+  #make it a histogram
+  geom_histogram(bidwidth = 5) +
+  
+  #label the plot
+  labs(
+    title = &quot;The Average Weight of US High Schoolers is 68kg&quot;,
+    subtitle = &quot;Distribution of Weight&quot;, 
+    x = &quot;Weight (kg)&quot;, 
+    y = &quot;&quot;, 
+    caption = &quot;Source: https://www.cdc.gov/healthyyouth/data/yrbs/index.html&quot;
+    ) +
+  
+  #choose theme_wsj  
+  theme_wsj() + 
+  
+  #customizing our graph so it looks nice 
+  theme(
+    
+    #specify title size and vertical position
+    plot.title = element_text(size = 14, vjust = 1),
+    
+    #specify subtitle size
+    plot.subtitle = element_text(size=12),
+    
+    #specify x-axis title size and vertical position
+    axis.title.x = element_text(size=10, vjust = -1),
+    
+    #specify x-axis ticks size
+    axis.text.x = element_text(size = 10),
+    
+    #specify y-axis ticks size
+    axis.text.y = element_text(size = 10),
+    
+    #specify caption text size and vertical position
+    plot.caption = element_text(size = 8, vjust = -4)
+    )</code></pre>
+<p><img src="/Projects/2020-10-20-project-5_files/figure-html/eda_on_weight-1.png" width="1152" style="display: block; margin: auto;" /></p>
+<p><strong>How many observations are we missing weights from?</strong></p>
+<p>There are 1004 values missing for weight which we can have found by using the skim function on the yrbss dataframe.</p>
+<p>Next, we consider the possible relationship between a high schooler’s weight and their physical activity. Plotting the data is a useful first step because it helps us quickly visualize trends, identify strong associations, and develop research questions.</p>
+<p>Let’s create a new variable <code>physical_3plus</code>, which will be <code>yes</code> if they are physically active for at least 3 days a week, and <code>no</code> otherwise.</p>
+<p><strong>Can you provide a 95% confidence interval for the population proportion of high schools that are <em>NOT</em> active 3 or more days per week?</strong></p>
+<pre class="r"><code>#define new dataframe yrbss2 which takes yrbss as an input to be manipulated. 
+yrbss2 &lt;- yrbss %&gt;% 
+  
+  #Add new column: entry is &#39;yes&#39; if student is physically active for 3 or more days a week, and &#39;no&#39; otherwise.
+  mutate(physical_3plus = ifelse(physically_active_7d &gt;= 3, &quot;yes&quot;, &quot;no&quot;))
+
+
+
+##create new dataframe for propotion and count of students who exercise 3 days or more, and those who don&#39;t
+
+#defining the new dataframe
+yrbss_3 &lt;- yrbss2 %&gt;% 
+  
+#filter out all rows for which the entry of the physical_3plus column is NA
+  filter(!is.na(physical_3plus)) %&gt;% 
+  
+#group by whether high schooler is physically active 3 or more days, or not 
+  group_by(physical_3plus) %&gt;% 
+  
+#Collapse dataframe tocount the number of students that are physically active three days or more, and the number of students that aren&#39;t
+  summarise(count = n()) %&gt;% 
+
+#add column of proportions called prop
+  mutate(prop = count/sum(count))
+
+#print the table to make sure it all works 
+yrbss_3 </code></pre>
+<pre><code>## # A tibble: 2 x 3
+##   physical_3plus count  prop
+##   &lt;chr&gt;          &lt;int&gt; &lt;dbl&gt;
+## 1 no              4404 0.331
+## 2 yes             8906 0.669</code></pre>
+<pre class="r"><code>##confidence intervals 
+
+#defining a function: input a proportion x and a total count/total number of trials y; outputs the standard deviation (binomial distribution)
+sd_prop &lt;- function(x,y) sqrt(x*(1-x)/y) 
+
+#defining a function: input a proportion x, a total count/total number of trials y, and a percentile z; outputs the confidence limit for that percentile. 
+CI &lt;- function(x,y,z) x + qnorm(z)*sd_prop(x,y)
+
+#defining the total number of students in physical_3plus
+sum_sample &lt;- sum(yrbss_3$count)
+
+#formatting the proportions in percentages for later use
+percentage &lt;- scales::percent(yrbss_3$prop)
+
+
+#defining a new dataframe for the confidence intervals
+yrbss_ci &lt;- yrbss_3 %&gt;%
+  mutate(
+                
+  #find the standard deviation using the function sd_prop() defined above
+  SD = sd_prop(prop, sum_sample), 
+                     
+  #find the lower 95% confidence interval limit for our proportions using the function CI() defined above         
+  CI_low = CI(prop, sum_sample, 0.025), 
+  
+  #find the higher 95% CI limit  
+  CI_high = CI(prop, sum_sample, 0.975), 
+  
+  #find the lower 95% CI limit in terms of absolute counts
+  CI_low_abs = CI_low*sum_sample, 
+  
+  #find the higher 95% CI limit in terms of absolute counts
+  CI_high_abs = CI_high*sum_sample
+  )
+
+#print the dataframe to read off the values
+yrbss_ci</code></pre>
+<pre><code>## # A tibble: 2 x 8
+##   physical_3plus count  prop      SD CI_low CI_high CI_low_abs CI_high_abs
+##   &lt;chr&gt;          &lt;int&gt; &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;      &lt;dbl&gt;       &lt;dbl&gt;
+## 1 no              4404 0.331 0.00408  0.323   0.339      4298.       4510.
+## 2 yes             8906 0.669 0.00408  0.661   0.677      8800.       9012.</code></pre>
+<pre class="r"><code>##plot the counts with the 95% CIs to get a nice visualisation of the data
+
+#Plot showing the number of students who exercise 3 or more times a week, and how many don&#39;t
+yrbss_ci_plot &lt;- yrbss_ci %&gt;% 
+  ggplot(aes(x = physical_3plus, y = count, fill = physical_3plus)) +
+  
+  #Adding labels
+  labs(
+    title = &quot;Most Students Exercise 3 or More Times per Week&quot;,
+    subtitle = &quot;According to Data from this Survey&quot;,
+    x = &quot;Exercise three or more times a week?&quot;,
+    y = &quot;Number of Students From Survey&quot;
+  ) +
+  
+  #plot a bar (column) graph, don&#39;t show the legend for the fill = physical_3plus
+  geom_col(show.legend = FALSE) +
+  
+  #plot the error bars using the CI calculated above
+  geom_errorbar(width=0.2, aes(ymin=CI_low_abs, ymax=CI_high_abs)) +
+  
+  #use theme wsj cause it looks nice, and scale the size of the text
+  theme_wsj() +
+  
+  #customising our graph so it looks nice. 
+  #In addition, by default, axis titles don&#39;t appear in theme_wsj plots
+  #thus, must add new theme element to manually override that
+  theme(
+    plot.title = element_text(size = 14),
+    plot.subtitle = element_text(size=12),
+    axis.title.x = element_text(size = 12),
+    axis.title.y=element_text(size=12),
+    axis.text.x = element_text(size = 10),
+    axis.text.y = element_text(size = 10) 
+    ) +
+  
+  #add proportions as percentages for clarity
+  geom_text(aes(label = percentage, vjust = -0.5, hjust = 3)) 
+
+#show the plot
+yrbss_ci_plot</code></pre>
+<p><img src="/Projects/2020-10-20-project-5_files/figure-html/Active_three_or_more_per_week_CI-1.png" width="1152" style="display: block; margin: auto;" /></p>
+<p>The 95% Confidence Intervals for the proportion of high schoolers that are <em>NOT</em> active 3 or more days per week ranges from 4298 to 4510 high schoolers. As can be seen on the plot, this is quite a narrow confidence interval.</p>
+<p><strong>Make a boxplot of <code>physical_3plus</code> vs. <code>weight</code>. Is there a relationship between these two variables? What did you expect and why?</strong></p>
+<pre class="r"><code>#filtering out the NAs in the physical_3plus column
+yrbss_no_NA &lt;- yrbss2 %&gt;% 
+              filter(!is.na(physical_3plus))
+
+
+
+#graph of weight against whether students exercise 3 or more times a week
+ggplot(yrbss_no_NA, aes (x=physical_3plus, y=weight)) +
+  
+#define it as a boxplot
+  geom_boxplot() +
+  
+#Adding labels
+  labs(title = &quot;The Relationship between Weight and Exercise&quot;,
+       subtitle = &quot;Boxplot of Physical Activity vs. Weight for US Highschoolers&quot;, 
+       x = &quot;Weight&quot;, 
+       y = &quot;Count&quot;, 
+       caption = &quot;Source: https://www.cdc.gov/healthyyouth/data/yrbs/index.html&quot;) +
+  
+#choosing wall street journal theme and scaling all text
+  theme_wsj(base_size = 9)</code></pre>
+<p><img src="/Projects/2020-10-20-project-5_files/figure-html/boxplot-1.png" width="1152" style="display: block; margin: auto;" />
+We expected to see that students who were more physically active, weigh less on average than students who are less physically active. However, what we see on the boxplot seems to be the opposite. Students who exercise three or more times a week (yes) are heavier on average, than students who do not (no). This may be because young teenagers are not yet fully mature yet and are still developing physically.</p>
+</div>
+<div id="confidence-interval" class="section level2">
+<h2>Confidence Interval</h2>
+<p>Boxplots show how the medians of the two distributions compare, but we can also compare the means of the distributions using either a confidence interval or a hypothesis test.</p>
+<pre class="r"><code>#create dataframe with summary statistics about student relationship between weight and exercise per week
+
+yrbss2 %&gt;%
+  
+  #group by whether students exercise 3 or more times a day or not (respectively &#39;yes&#39; and &#39;no&#39;)
+  group_by(physical_3plus) %&gt;%
+  
+  #filter out the rows for which the physical_3plus column has value NA 
+  filter(!is.na(physical_3plus)) %&gt;% 
+  
+  #fcalculate summary statistics
+  summarise(
+            #mean weight 
+            mean_weight = mean(weight, na.rm = TRUE),
+            
+            #standard deviation of weight data for each group (yes or no to physical_3plus)
+            sd_weight = sd(weight, na.rm=TRUE),
+            
+            #the number of students which exercise 3 or more times a week and the number of students who don&#39;t
+            count = n(),
+            
+            #standard error of weight data for each group
+            se_weight = sd_weight/sqrt(count),
+            
+            #t value for 95% percentile (Student&#39;s t distribution since sample)
+            t_critical = qt(0.975, count-1), 
+            
+            #margin of error for 95% CI
+            margin_of_error = t_critical * se_weight,
+            
+            #lower 95% CI
+            lower = mean_weight - t_critical * se_weight,
+            
+            #upper 95% CI
+            upper = mean_weight + t_critical * se_weight
+           )</code></pre>
+<pre><code>## # A tibble: 2 x 9
+##   physical_3plus mean_weight sd_weight count se_weight t_critical
+##   &lt;chr&gt;                &lt;dbl&gt;     &lt;dbl&gt; &lt;int&gt;     &lt;dbl&gt;      &lt;dbl&gt;
+## 1 no                    66.7      17.6  4404     0.266       1.96
+## 2 yes                   68.4      16.5  8906     0.175       1.96
+## # … with 3 more variables: margin_of_error &lt;dbl&gt;, lower &lt;dbl&gt;, upper &lt;dbl&gt;</code></pre>
+<p>There is an observed difference of about 1.77kg (68.44 - 66.67), and we notice that the two confidence intervals do not overlap. It seems that the difference is at least 95% statistically significant. Let us also conduct a hypothesis test.</p>
+</div>
+<div id="hypothesis-test-with-formula" class="section level2">
+<h2>Hypothesis test with formula</h2>
+<p><strong>Write the null and alternative hypotheses for testing whether mean weights are different for those who exercise at least 3 times a week and those who don’t.</strong></p>
+<ul>
+<li>Null Hypothesis: Mean weights are equal between the two groups</li>
+<li>Alternative Hypothesis : Mean weights are different between the two groups</li>
+</ul>
+<pre class="r"><code>t.test(weight ~ physical_3plus, data = yrbss2)</code></pre>
+<pre><code>## 
+##  Welch Two Sample t-test
+## 
+## data:  weight by physical_3plus
+## t = -5, df = 7479, p-value = 9e-08
+## alternative hypothesis: true difference in means is not equal to 0
+## 95 percent confidence interval:
+##  -2.42 -1.12
+## sample estimates:
+##  mean in group no mean in group yes 
+##              66.7              68.4</code></pre>
+</div>
+<div id="hypothesis-test-with-infer" class="section level2">
+<h2>Hypothesis test with <code>infer</code></h2>
+<p>Here we use the infer package to see whether we can reject the null hypothesis or not.</p>
+<p>First, we initialize the test, which we will save as <code>obs_diff</code>.</p>
+<pre class="r"><code>obs_diff &lt;- yrbss2 %&gt;%
+  specify(weight ~ physical_3plus) %&gt;%
+  calculate(stat = &quot;diff in means&quot;, order = c(&quot;yes&quot;, &quot;no&quot;))
+
+obs_diff</code></pre>
+<pre><code>## # A tibble: 1 x 1
+##    stat
+##   &lt;dbl&gt;
+## 1  1.77</code></pre>
+<p>After we have initialized the test, we must simulate the test on the null distribution, which we will save as null.</p>
+<pre class="r"><code>#simulating the null distribution
+null_dist &lt;- yrbss2 %&gt;%
+  
+  #specify the two variables we&#39;re investigating
+  specify(weight ~ physical_3plus) %&gt;%
+  
+  #null hypothesis
+  hypothesize(null = &quot;independence&quot;) %&gt;%
+  
+  #generate/simulate null hypothesis
+  generate(reps = 1000, type = &quot;permute&quot;) %&gt;%
+  
+  #calculate the difference in means
+  calculate(stat = &quot;diff in means&quot;, order = c(&quot;yes&quot;, &quot;no&quot;))</code></pre>
+<p>We can visualize this null distribution with the following code:</p>
+<pre class="r"><code>#plotting the null distribution
+ggplot(data = null_dist, aes(x = stat)) +
+  geom_histogram() +
+  theme_wsj(base_size = 9) +
+  labs(title = &quot;Null Distribution for Mean weights&quot;,
+       subtitle = &quot;Using the Infer Package&quot;, 
+       x = &quot;&quot;, 
+       y = &quot;Count&quot;)</code></pre>
+<p><img src="/Projects/2020-10-20-project-5_files/figure-html/unnamed-chunk-5-1.png" width="1152" style="display: block; margin: auto;" /></p>
+<p>Now that the test is initialized and the null distribution formed, we can visualise to see how many of these null permutations have a difference of at least <code>obs_stat</code> of 1.77.</p>
+<p>We can also calculate the p-value for your hypothesis test using the function <code>infer::get_p_value()</code>.</p>
+<pre class="r"><code>null_dist %&gt;% visualize() +
+  shade_p_value(obs_stat = obs_diff, direction = &quot;two-sided&quot;) +
+  theme_wsj(base_size = 8) +
+    labs(title = &quot;Null Distribution for Mean weights with p-value&quot;,
+       subtitle = &quot;Using the Infer Package&quot;, 
+       x = &quot;&quot;, 
+       y = &quot;Count&quot;)</code></pre>
+<p><img src="/Projects/2020-10-20-project-5_files/figure-html/unnamed-chunk-6-1.png" width="1152" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>null_dist %&gt;% 
+  get_p_value(obs_stat = obs_diff, direction = &quot;two_sided&quot;) </code></pre>
+<pre><code>## # A tibble: 1 x 1
+##   p_value
+##     &lt;dbl&gt;
+## 1       0</code></pre>
+<p>We can clearly see, both from the t-test and from using the infer package, that we may reject the null hypothesis. Both gives p-values which are essentially zero. Since this is less than 5%, we can reject the null hypothesis: the mean weights of people which exercise 3 or more times a week vs. those who do not, are not the same.</p>
+</div>
+</div>
