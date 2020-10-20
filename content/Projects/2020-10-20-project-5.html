@@ -5,7 +5,7 @@ date: '2020-10-20'
 slug: project-5
 categories: []
 tags: []
-description: ''
+description: 'Every two years, the Centers for Disease Control and Prevention conduct the Youth Risk Behavior Surveillance System (YRBSS) survey, where it takes data from high schoolers (9th through 12th grade), to analyze health patterns. We will work with a selected group of variables from a random sample of observations during one of the years the YRBSS was conducted.'
 image: Youth_pic.jpg
 keywords: ''
 draft: no
@@ -14,8 +14,6 @@ draft: no
 <script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
 
 
-<div id="section" class="section level1">
-<h1></h1>
 <p>Every two years, the Centers for Disease Control and Prevention conduct the <a href="https://www.cdc.gov/healthyyouth/data/yrbs/index.htm">Youth Risk Behavior Surveillance System (YRBSS)</a> survey, where it takes data from high schoolers (9th through 12th grade), to analyze health patterns. We will work with a selected group of variables from a random sample of observations during one of the years the YRBSS was conducted.</p>
 <div id="load-the-data" class="section level2">
 <h2>Load the data</h2>
@@ -610,5 +608,4 @@ ggplot(data = null_dist, aes(x = stat)) +
 ##     &lt;dbl&gt;
 ## 1       0</code></pre>
 <p>We can clearly see, both from the t-test and from using the infer package, that we may reject the null hypothesis. Both gives p-values which are essentially zero. Since this is less than 5%, we can reject the null hypothesis: the mean weights of people which exercise 3 or more times a week vs. those who do not, are not the same.</p>
-</div>
 </div>

@@ -5,7 +5,7 @@ date: '2020-10-20'
 slug: project-3
 categories: []
 tags: []
-description: ''
+description: "We will look at how GDP and its components have changed over time, and compare different countries and how much each component contributes to that country's GDP."
 image: GDP.jpg
 keywords: ''
 draft: no

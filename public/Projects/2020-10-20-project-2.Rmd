@@ -5,7 +5,7 @@ date: '2020-10-20'
 slug: project-2
 categories: []
 tags: []
-description: ''
+description: 'We analyse data for Airbnb listings in Shanghai, and try to find a regression model to predict the total cost for two people staying 4 nights in an AirBnB in the city'
 image: Shanghai.jpg
 keywords: ''
 draft: no
