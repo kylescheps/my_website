@@ -79,8 +79,6 @@
 
 
 <p>Every so often, we hear warnings from commentators on the “inverted yield curve” and its predictive power with respect to recessions.</p>
-<p>The question is, is this a self-fulfilling prophecy or not? The wonderful and beautfiul short story below, illustrates what we mean by that:</p>
-<p><img src="/Users/kylecodingr/Desktop/my_website/static/img/yield_curve_parable.jpg" width="100%" style="display: block; margin: auto;" /></p>
 <p>In our case we will look at US data and use the <a href="https://fred.stlouisfed.org/">FRED database</a> to download historical yield curve rates, and plot the yield curves since 1999 to see when the yield curves flatten.</p>
 <p>First, we will use the <code>tidyquant</code> package to download monthly rates for different durations.</p>
 <pre class="r"><code># Get a list of FRED codes for US rates and US yield curve; choose monthly frequency
@@ -392,10 +390,7 @@ skim(yield_curve)</code></pre>
 <h2>Plotting the yield curve</h2>
 <div id="yields-on-us-rates-by-duration-since-1960" class="section level3">
 <h3>Yields on US rates by duration since 1960</h3>
-<p>We would like to reproduce the following graph.</p>
-<p><em>Sample graph:</em>
-<img src="/Users/kylecodingr/Desktop/my_website/static/images/yield_curve1.png" width="100%" style="display: block; margin: auto;" /></p>
-<p><em>Here is our result:</em></p>
+<p>We look at yields on US rates since 1960.</p>
 <pre class="r"><code>#recreating the above plot using the yield_curve dataframe
 yield_curve %&gt;% 
   
@@ -439,10 +434,7 @@ yield_curve %&gt;%
 </div>
 <div id="monthly-yields-on-us-rates-by-duration-since-1999-on-a-year-by-year-basis" class="section level3">
 <h3>Monthly yields on US rates by duration since 1999 on a year-by-year basis</h3>
-<p>We would like to reproduce the following plot:</p>
-<p><em>Sample graph:</em>
-<img src="/Users/kylecodingr/Desktop/my_website/static/images/yield_curve2.png" width="100%" style="display: block; margin: auto;" /></p>
-<p><em>Our result:</em></p>
+<p>We investigate monthly yields on US rates since 1999.</p>
 <pre class="r"><code>##PREPPING DATA TO PLOT
 
 #creating new dataframe filtering for years after and including 1999 only
@@ -521,10 +513,7 @@ yield_curve1999_plot </code></pre>
 </div>
 <div id="month-and-10-year-yields-since-1999" class="section level3">
 <h3>3-month and 10-year yields since 1999</h3>
-<p>We would like to replicate the following graph</p>
-<p><em>Sample graph:</em>
-<img src="/Users/kylecodingr/Desktop/my_website/static/images/yield_curve3.png" width="100%" style="display: block; margin: auto;" /></p>
-<p><em>Our result:</em></p>
+<p>We compare and investigate the yields for 3 month and 10 year US government bonds since 1999.</p>
 <pre class="r"><code>##PREPPING DATA FOR PLOT
 
 #Defining new dataframe  
@@ -592,10 +581,8 @@ yield_3m_10m_plot #print plot</code></pre>
 <p><img src="/Projects/2020-10-20-project-1_files/figure-html/recreating_third_plot-1.png" width="1152" style="display: block; margin: auto;" /></p>
 <p><strong>According to <a href="https://en.wikipedia.org/wiki/List_of_recessions_in_the_United_States">Wikipedia’s list of recession in the United States</a>, since 1999 there have been two recession in the US: between Mar 2001–Nov 2001 and between Dec 2007–June 2009. Does the yield curve seem to flatten before these recessions? Can a yield curve flattening really mean a recession is coming in the US? Since 1999, when did short-term (3 months) yield more than longer term (10 years) debt?</strong></p>
 <p>Under normal circumstances, the yield curve has an arching, upward slope because bond investors expect to be compensated more for taking on the added risk of owning bonds with longer maturities. When yields further out on the curve are substantially higher than those near the front, the curve is referred to as steep. So a 30-year bond will deliver a much higher yield than a 2-year note. When the gap, or “spread”, is narrow, it is referred to as a flat curve. In that situation, a 10-year note, for instance, may offer only a modestly higher yield than a 3-year note. On rare occasions, some or all of the yield curve ceases to be upward sloping. This occurs when shorter-dated yields are higher than longer-dated ones and is called an inversion. While various economic or market commentators may focus on different parts of the yield curve, any inversion of the yield curve tells the same story: An expectation of weaker growth in the near future. Still, while a recession may be likely to follow an inversion, the timing is uncertain, and loose monetary policy globally could result in any downturn taking longer to materialize. The data shows that the spread between the 3month and the 10y bond diminishes before a recession. Since 1999, the yield on the 3month bonds exceeded the yield on the 10 year bonds 3 time: In 2001, 2007, and 2019.</p>
-<p>Finally, we would like to reproduce the following plot</p>
-<p><em>Sample graph:</em>
-<img src="/Users/kylecodingr/Desktop/my_website/static/images/yield_curve_challenge.png" width="100%" style="display: block; margin: auto;" />
-We proceed in three steps:</p>
+<p>Finally, we would like to create a plot for the yield curve inversion (10 year minus 3 month U.S. Treasury rates).</p>
+<p>We proceed in three steps:</p>
 <ol style="list-style-type: decimal">
 <li>Setup data for US recessions</li>
 <li>Superimpose recessions as the grey areas in our plot</li>

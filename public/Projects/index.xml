@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Data-Analytics on Kyle S</title>
+    <title>Data Analytics on Kyle S</title>
     <link>/projects/</link>
-    <description>Recent content in Data-Analytics on Kyle S</description>
+    <description>Recent content in Data Analytics on Kyle S</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <lastBuildDate>Tue, 31 Oct 2017 22:27:21 -0500</lastBuildDate><atom:link href="/projects/index.xml" rel="self" type="application/rss+xml" />
@@ -42,8 +42,8 @@ The GDP data we will look at is from the United Nations’ National Accounts Mai
       
       <guid>/projects/project-1/</guid>
       <description>Every so often, we hear warnings from commentators on the “inverted yield curve” and its predictive power with respect to recessions.
-The question is, is this a self-fulfilling prophecy or not? The wonderful and beautfiul short story below, illustrates what we mean by that:
-In our case we will look at US data and use the FRED database to download historical yield curve rates, and plot the yield curves since 1999 to see when the yield curves flatten.</description>
+In our case we will look at US data and use the FRED database to download historical yield curve rates, and plot the yield curves since 1999 to see when the yield curves flatten.
+First, we will use the tidyquant package to download monthly rates for different durations.</description>
     </item>
     
     <item>

@@ -833,10 +833,7 @@ tidy_GDP_data</code></pre>
 ## # … with 176,870 more rows</code></pre>
 <pre class="r"><code># Let us compare GDP components for these 3 countries
 country_list &lt;- c(&quot;United States&quot;,&quot;India&quot;, &quot;Germany&quot;)</code></pre>
-<p>We would like to reproduce the following plot:</p>
-<p><em>Sample graph:</em>
-<img src="/Users/kylecodingr/Desktop/my_website/images/gdp1.png" width="100%" style="display: block; margin: auto;" />
-<em>Our Result:</em></p>
+<p>We now produce the following plot:</p>
 <pre class="r"><code>country_list</code></pre>
 <pre><code>## [1] &quot;United States&quot; &quot;India&quot;         &quot;Germany&quot;</code></pre>
 <pre class="r"><code>#cleaning data
@@ -1065,10 +1062,7 @@ tidy_GDP_data_NK</code></pre>
 ## # … with 134 more rows</code></pre>
 <p>The first thing that pops out when inspecting the data frame is that D.P.R. of Korea seems to have negative GDP according to our calculation! Upon further inspection, as can be seen in the second dataframe produced, we can see that not all the data we need to calculate the GDP using the formula is available to us for D.P.R. of Korea. This explains the strange numbers we found.</p>
 <p>For the rest of the countries and years, it seems some percentage differences are small and almost negligible, others take values between 1-10% difference, and few take values greater than that. In general, the differences between the different percentages varies significantly from country to country and from year to year.</p>
-<p>Finally, we would like to reproduce the following plot:</p>
-<p><em>Sample graph:</em>
-<img src="/Users/kylecodingr/Desktop/my_website/images/gdp2.png" width="100%" style="display: block; margin: auto;" />
-<em>Our Result</em></p>
+<p>Finally, we would produce the following plot:</p>
 <pre class="r"><code>tidy_GDP_data_prop &lt;- tidy_GDP_data %&gt;%
   
   #select relevanr columns

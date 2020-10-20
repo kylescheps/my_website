@@ -1,9 +1,9 @@
 ---
 date: "2017-10-31T22:27:21-05:00"
 draft: false
-image: pic02.jpg
+image: 2nd_page.jpg
 slug: Projects
-title: Data-Analytics
+title: Data Analytics
 ---
 
-My blogs about data analytics.
+My Data Analytics Projects using R and Rmarkdown.

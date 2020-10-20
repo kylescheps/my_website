@@ -98,13 +98,9 @@ tidy_GDP_data
 country_list <- c("United States","India", "Germany")
 ```
 
-We would like to reproduce the following plot:
+We now produce the following plot:
 
-*Sample graph:*
-```{r gdp1_fig, echo=FALSE, out.width="100%"}
-knitr::include_graphics(here::here("images", "gdp1.png"), error = FALSE)
-```
-*Our Result:*
+
 ```{r, gdp1}
 country_list
 
@@ -285,13 +281,8 @@ The first thing that pops out when inspecting the data frame is that D.P.R. of K
 For the rest of the countries and years, it seems some percentage differences are small and almost negligible, others take values between 1-10% difference, and few take values greater than that. In general, the differences between the different percentages varies significantly from country to country and from year to year.
 
 
-Finally, we would like to reproduce the following plot:
+Finally, we would produce the following plot:
 
-*Sample graph:*
-```{r, gdp2_fig, echo=FALSE, out.width="100%"}
-knitr::include_graphics(here::here("images", "gdp2.png"), error = FALSE)
-```
-*Our Result*
 ```{r}
 
 tidy_GDP_data_prop <- tidy_GDP_data %>%
