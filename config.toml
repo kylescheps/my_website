@@ -1,7 +1,7 @@
 # Site settings
 baseURL = "https://kyles0.netlify.app/"
 languageCode = "en-us"
-title = "Kyle"
+title = "Kyle S"
 theme = "forty"
 
 # Enter your tracking code to enable Google Analytics
@@ -51,9 +51,9 @@ disqusShortname = ""
       name = "Projects"
       url = "projects"
 
-    [[params.navigation.links]]
-      name = "Elements"
-      url = "elements.html"
+    #[[params.navigation.links]]
+     # name = "Elements"
+      #url = "elements.html"
 
     # Add custom links here by uncommenting code below. To remove links just delete
     # the [[params.navigation.links]] map associated with that link. Copy and paste
@@ -63,9 +63,9 @@ disqusShortname = ""
     #    url = "UrlOfLink"
 
     # Button Style 1
-    [[params.navigation.button1]]
-      name = "Get Started"
-      url = "blogs"
+    #[[params.navigation.button1]]
+     # name = "Get Started"
+      #url = "blogs"
 
   # Banner section
   [params.banner]
