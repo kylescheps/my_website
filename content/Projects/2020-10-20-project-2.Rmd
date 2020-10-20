@@ -1,0 +1,1385 @@
+---
+title: Regression Analysis for Shanghai AirBnBs
+author: Kyle Coding R
+date: '2020-10-20'
+slug: project-2
+categories: []
+tags: []
+description: ''
+image: ''
+keywords: ''
+draft: no
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  message = FALSE, 
+  warning = FALSE, 
+  tidy=FALSE,     # display code as typed
+  size="small")   # slightly smaller font for code
+options(digits = 3)
+
+# default figure size
+knitr::opts_chunk$set(
+  fig.width=12,
+  fig.height=10,
+  fig.align = "center"
+)
+```
+
+
+```{r, Librarys, echo=FALSE}
+library(tidyverse)  # Load ggplot2, dplyr, and all the other tidyverse packages
+library(mosaic)
+library(ggthemes)
+library(GGally)
+library(readxl)
+library(here)
+library(skimr)
+library(janitor)
+library(broom)
+library(tidyquant)
+library(infer)
+library(openintro)
+library(tidyquant)
+library(vroom)
+library(leaflet)
+library(ggfortify)
+library(huxtable)
+library(lmtest)
+library(knitr)
+library(interactions)
+```
+
+
+# Introduction
+
+In our final group assignment, we analyse data about Airbnb listings, and we try to find a model to predict the total cost for two people staying 4 nights in an AirBnB in Shanghai. Our data set comes from insideairbnb.com; it was originally scraped from airbnb.com. Our work is structured as follows: We begin by cleaning our data set. For instance, we remove outliers, delete NAs, and convert non-numeric data into numeric data. To visualize the spatial distribution and the price differences, we map all 42 thousand Shanghai AirBnB rentals on a map. We then continue running EDA on the data to get a better understanding of both the prices and of the explanatory variables. Based on the insights gained in the EDA, we will then carry out several regression specifications and will ultimately come up with our best fitting model. Based on this model, we will answer the main question of this assignment, i.e. the total cost for two people staying 4 nights in a Shanghai AirBnB.
+
+# Exploratory Data Analysis
+
+## Raw Exploratory Analysis - Getting to Know Our Data
+
+In the following, we would like to answer these questions.
+
+* How many variables/columns? How many rows/observations?
+* Which variables are numbers?
+* Which are categorical or factor variables?
+* What are the correlations between variables? Does each scatterplot support a linear relationship between variables? Do any of the correlations appear to be conditional on the value of a categorical variable?
+
+
+### Introduction to the data set
+
+Before we begin, let us load our raw dataset.
+
+```{r, data load}
+listings <- vroom("http://data.insideairbnb.com/china/shanghai/shanghai/2020-06-20/data/listings.csv.gz")
+```
+
+
+The `glimpse()` and `skim()` command enables us a good introduction into the data set. We run these commands here, but do not show the ouput tables (using `echo=TRUE, results=hide`) as they are messy. Instead, we summarise the main findings in prose \ 
+In total, the data set comprises 106 columns and 41,415 rows, in which each column captures one variable and each row stands for one property on AirBnB in Shanghai. In the case of a balanced table, this should yield into 4,389,990 (rows x columns) observations. A quick look on the data reveals that multiple values are missing. It is important that the missing values are random and not systematically because otherwise the sample may no longer be representative of the population. We will explore later whether this is the case or not.\ The data set contains numeric data, characters, dates, and logical values. Below, you find examples for each of the different data types.\
+
+
+```{r, our_first_look, echo=TRUE, results='hide'}
+#Looking at the raw values
+glimpse(listings)
+skim(listings)
+
+```
+
+### Data Types
+
+**Numeric data**\
+There are 39 numeric variables which capture information like *number of rooms*, *review score*, or *zip code*. *Prices* (e.g. price per night, price per week) are not captured as numerics but as characters. In order to carry out our analysis, we will convert prices into numerics later.
+
+**Character data**\
+There are 46 variables stored as characters. Examples for character variables are *descriptions, neighbourhood*, or *street*. Besides *prices*, there are a several more character variables which are actual numeric data such as *cleaning fee* or *response rate*. If necessary, we will convert them into numeric data later.
+
+**Logical data**\
+The logical data type is a data type that has one of two possible values (i.e. True and False). In the AirBnB data set, examples for logical variables are *Superhost* or *Host has profile picture*. In total, there are 16 logical variables.
+
+**Date**\
+The final date type is *Date*, which comprises 5 variables including the date of the *first review*, of the *last review*, or since when the landlord is a host (*host since*) on AirBnB. 
+
+**Categorial values**\
+Some variables are categorial, that means they have a fixed set of values. However none of them are stored as factor data types (yet)
+
+
+## Data Cleaning
+
+In the following, we clean our raw data. The output of this cleaning is the following:
+
+* Convert `price` (the price of the airbnb per night), `extra_people` (price for more people than listing includes in original price) and `cleaning_fee` (a one off fee for cleaning the airbnb after staying) from character variable types, to numeric types
+* Add a column `price_ln` (the natural log of the price)
+* Handle the NAs in `cleaning_fee`
+* Simplify `property_type` and `neighbourhoods` into 5 and 4 categories respectively (we did not do so for room types as there is a small enough number of categories already).
+* Filter out price = 0
+* Filter out 2SD outliers above the mean (explanation below)
+* Filter out minimum stays longer than 4 days (`minimum_nights` <= 4), since we are interested in Airbnbs as a method of vacation stay/substitute to hotels (not for long term on-site living).
+* We randomly sample 2000 observations out of our dataset. Our raw dataset is large (over 4 million entries) and we will later have to cross-correlate across many variables. This eases computing times.
+    + Since we do this randomly, our sample is still representative of our initial data (as we will show later).
+
+### Converting into numerics 
+
+We cannot plot/work with characters for `price`, `cleaning_fee` and `extra_people`. Thus we convert them into numerics.
+
+```{r, converting into numerics}
+#Converting prices per night and cleaning fee into numerics
+listings_num <- listings %>%
+  mutate(cleaning_fee = parse_number(cleaning_fee),
+         price = parse_number(price),
+         extra_people = parse_number(extra_people))
+
+#test if stored correctly
+typeof(listings_num$price) 
+typeof(listings_num$cleaning_fee)
+typeof(listings_num$extra_people) 
+```
+
+### Cleaning Fee
+
+Using skim, it can be found that there are 22708 datapoints listed as NA in `cleaning_fee`. This corresponds to a 45.2% of the data being included as a value. This is not random, and is most likely a consequence of these listings including the cleaning fee inside of `price`. We handle the NAs below to reflect that
+
+```{r, missing values}
+
+listings_num_na <- listings_num %>%
+  mutate(cleaning_fee_0 = case_when(
+    
+    #if cleaning_fee is NA, then it is 0 (since already included in price)
+    is.na(cleaning_fee) ~ 0, 
+    
+    #Otherwise, remains unchanged
+    TRUE ~ cleaning_fee
+  ))
+
+#Check if replacing NAs was successful
+listings_num_na_check<-listings_num_na %>% select(cleaning_fee_0,cleaning_fee)
+head(listings_num_na_check, n=10) %>% 
+  kable() %>% 
+  kableExtra::kable_material_dark()
+
+```
+
+
+### Property Types
+
+We have many different property types in our dataset (45 to be precise). Conducting regression analyses over this much data is beyond the scope of this project. Thus, we would like to keep to most common property types, and group the rest together.
+
+To begin doing so, we investigate the top property types here:
+
+```{r, property_types}
+listings_property_type <- listings_num_na %>% 
+  group_by(property_type) %>% 
+  summarise(number_of_properties = count(property_type)) %>% 
+  mutate(proportion = number_of_properties/sum(number_of_properties),
+         percent = scales::percent(number_of_properties/sum(number_of_properties))
+         ) %>% 
+  arrange(desc(number_of_properties))
+
+listings_property_type  %>% 
+  kable() %>% 
+  kableExtra::kable_material_dark()
+
+proportion_top4 <- sum(listings_property_type$proportion[1:4])
+
+proportion_top4
+
+
+```
+The 4 most common property types are:
+
+* Apartment (15739)
+* Villa (5260)
+* House (5037)
+* Condominium (4012)
+
+These make up 72.6% of the total listings.
+
+Since these take up such a large proportion of the dataset, we create a simplified listings table, which includes the above top 4, and the rest are labelled as "Other"
+
+```{r, property_types2}
+#creating listings with only the top 4 property types, and "Other"
+listings_simplified <- listings_num_na %>%
+  mutate(prop_type_simplified = case_when(
+    property_type %in% c("Apartment","Villa", "House","Condominium") ~ property_type, 
+    TRUE ~ "Other"
+  ))
+
+#Checking this worked properly
+listings_simplified_check<-listings_simplified %>%
+  count(property_type, prop_type_simplified) %>%
+  arrange(desc(n)) 
+
+head(listings_simplified_check, n = 10) %>% 
+  kable() %>% 
+  kableExtra::kable_material_dark()
+  
+```
+
+### Minimum Nights
+
+Airbnb is most often used as an alternative to hotels while traveling. We would thus like to investigate the data which pertains to traveling only (no long term stays). To do so, we investigate the `minimum_nights` column.
+
+```{r, minimum_nights}
+listings_min_night_count <- listings_num_na %>% 
+  group_by(minimum_nights) %>% 
+  count() %>%
+  arrange(desc(n))
+
+head(listings_min_night_count)
+
+favstats(listings_min_night_count$minimum_nights) %>% 
+  kable() %>% 
+  kableExtra::kable_material_dark()
+
+```
+
+As we can see, the most common (top 5) values for minimum nights are:
+
+* 1 Night (32034)
+* 30 Nights i.e. one month (2842)
+* 2 Nights (1937)
+* 3 Nights (985)
+* 90 Nights i.e. 3 months (514).
+
+Among this list, we find 30 night and 90 night minimums as well. These are longer term stays, which wouldn't really be used for short term traveling/holidays, but rather for living on site (1+ or 3+ months). The largest value in `minimum_nights` is 1125 days, with the mean that is much lower. The unusual data may be the maximum of 1125 days (i.e. 3years), which would increase the mean of the `minimum_night` variable.
+
+Since we are interested in Airbnb for travelling/holdiays/short term stays, we filter the data accordingly.
+```{r, minimum_nights2}
+
+#filtering for short stays (less than or equal to 4 nights)
+listings_short_stay <- listings %>% 
+  filter(minimum_nights <= 4) %>% 
+  arrange(desc(minimum_nights))
+
+#checking it all worked
+listings_short_stay %>% 
+  group_by(minimum_nights) %>% 
+  summarise(count(minimum_nights)) %>% 
+  kable() %>% 
+  kableExtra::kable_material_dark()
+
+```
+
+### Neighbourhoods
+
+There are many neighbourhoods in Shanghai. Let's see just how many:
+```{r, neighbourhood_count}
+#In Shanghai city, let's inspect the different neighborhoods.
+listings %>%
+  group_by(neighbourhood) %>%
+  summarize(count=n()) %>%
+  arrange(desc(count)) %>% 
+  kable() %>% 
+  kableExtra::kable_material_dark()
+```
+
+We count 61 neighbourhoods (technically 60 and 1 NA) inside of Shanghai! Working with and comparing/analysing such a large number of categories is outside our scope. Instead, we shall group these together into 4 categories:
+
+* Central Area (Many tourist attractions, and thus highly popular)
+* Half-Central Area (newly built, includes financial centers)
+* Suburbs
+* Chongming Island (island adjacent to Shanghai City itself)
+
+We code in/incorporate these changes in the next section (**Combined Data Cleaning**) just below, in order to avoid redundancy.
+
+### Combined Data Cleaning
+
+We have conducted the above data filtering on each of the variables individually. We now combine this data cleaning/filtering to have one clean dataframe for carrying out our regression analysis.
+
+```{r, combining_data_filtering}
+
+#arranging the data, use the already filt
+listings_data_filtering <- listings %>% 
+  
+  #filter for short stays
+  filter(minimum_nights <= 4) %>% 
+  
+  #group top 4 property types as "Other"
+  mutate(prop_type_simplified = case_when(
+    property_type %in% c("Apartment","Villa", "House","Condominium") ~ property_type, 
+    TRUE ~ "Other"
+  )) %>%
+  
+  #NAs in cleaning_fee i.e. when cleaning fee is included in the price
+  #say that it is fee of 0 so the whole column can be numeric
+  #for later convenience we also add a column with ln(price)
+  mutate(cleaning_fee = parse_number(cleaning_fee),
+         price = parse_number(price),
+         extra_people=parse_number(extra_people),
+         price_ln=log(price),
+         cleaning_fee = case_when(
+    is.na(cleaning_fee) ~ 0, 
+    TRUE ~ cleaning_fee)
+    ) %>% 
+  
+    #group together all the neighbourhoods
+  mutate(neighbourhood_simplified = case_when(
+    
+          #half-central area (newly built, including financial centers)
+          neighbourhood %in% c("Pudong","Tianqiao", "Pujiang Towm", "Jinqiao", "Yaohan", "Lujiazui", "Linyi New Village", "Xujiahui", "Dapuqiao", "Huǒchē", "Weifang New Village") ~ "half-central", 
+      
+          #central areas, many tourism attractions
+          neighbourhood %in% c("Xuhui","Huangpu", "Puxi", "Jing'an", "Changning", "People's Square", "Hongkou", "Conservatory", "Zhabei", "Luwan", "Hengshan", "Xinhua Road", "Yangpu", "Zintiandi", "Nanjing Road West", "Zhongshan Park", "Tongle Fang", "Putuo", "Old Simon", "Gubei", "Jing'an Temple", "Longhua", "Meichuan Road", "Caohejing/TianLin", "Temple", "Dongjiadu", "Caojiadu", "Changfeng Park") ~ "central",
+      
+          #suburb
+          neighbourhood %in% c("Qingpu", "Songjiang", "Jiading", "Baoshan", "Fengxian", "Jingshan", "Chunshen", "Southern Region","Wanyuan City/East Portland Road", "Hongqiao Town", "Old Minhang", "Hongqiao", "Minhang", "Nanfang Shangcheng", "Hongmei Road") ~"suburb",
+          
+          #for NAs we check the map and found it is Chongming island which is a part near Shanghai city
+          TRUE ~ "island"
+          )
+        ) %>% 
+  
+  #removing all zeros and 2SD outliers for prices
+  filter(price!=0,price<=mean(price)+2*sd(price)) %>% 
+  
+  
+  #arrange by price to make it neater
+  arrange(desc(price))
+```
+
+### Sampling our data
+
+In order to reduce the required computing power to carry out our regression analysis, we take a sample of 2,000 randomly picked observations from the cleaned data set.
+```{r, taking sample}
+
+#Picking 2000 observations randomly 
+set.seed(2000) #command that we do not resample everytime
+listings_2000 <- listings_data_filtering %>% 
+  sample_n(2000)
+
+```
+
+
+## Further EDA on our sample
+
+### Representativeness of sample
+
+In the following, we show that our sample with 2,000 observations is representative of the original data set comprising over 40,000 observations. We do so by comparing the respective distribution using density plots and by comparing key statistics using *favstats*. We prefer using density plots over histograms to normalize for the number of observations. The results show that our sample is indeed representative for the original data set: The distributuion and the key statistics are similar.
+
+```{r, comparison_sample_original_data_set}
+#Density plot of original data set to visualize distribution
+listings_data_filtering %>%  
+  ggplot(aes(x=price)) +
+  geom_density() +
+  labs(title="Heavy right-skewed distribution",
+       subtitle="Density plot of original data set",
+       x= "Price per night"
+       ) +
+  theme_stata() +
+  theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank())
+
+#Density plot of sample to visualize distribution
+listings_2000 %>%  
+  ggplot(aes(x=price)) +
+  geom_density() +
+  labs(title="Distribution of sample is similar to original data set",
+       subtitle="Density of sample",
+       x= "Price per night"
+       ) +
+  theme_stata() +
+  theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank())
+
+#Checking key statistics
+statistics_2000<-favstats(~price,data=listings_2000)
+statistics_pop<-favstats(~price,data=listings_data_filtering)
+statistics_2000 %>% 
+  kable() %>% 
+  kableExtra::kable_material_dark()
+statistics_pop %>% 
+  kable() %>% 
+  kableExtra::kable_material_dark()
+```
+
+### Taking logs of prices
+For us, there are three main motivations to take the natural logarithm of a variable in a regression model:
+
+* **Improving model fit** If your residuals aren't normally distributed, then taking the logarithm of a skewed variable may improve the fit by altering the scale and making the variable more "normally" distributed
+* **Convenient model interpretation** Logging the dependent variable (prices) while not transforming the independent variable enables us the following interpretation:  a one unit increase in X would lead to a β∗100 % increase/decrease in Y
+* **Heteroskedasticity** The variance of your regression residuals are increasing with your regression predictions. Taking the log of your dependent and/or independent variables may eliminate the heteroscedasticity
+
+
+Our data frame `listings_data_filtering` already included logs of prices and so does our sample data frame `listings_2000`. Let's compare the distribution of prices and log prices. We can see that by taking the logs we are approximating a normal distribution. Thereby, we increase our model fit.
+```{r, taking logs}
+
+#Histogram of sample using non-log prices
+listings_2000 %>%  
+  ggplot(aes(x=price)) +
+  geom_histogram() +
+  labs(title="Heavy right-skewed distribution",
+       subtitle="Distribution of prices ",
+       x= "Price per night"
+       ) +
+  theme_stata() +
+  theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank())
+
+#Histogram of sample using log prices
+listings_2000 %>%  
+  ggplot(aes(x=price_ln)) +
+  geom_histogram() +
+  labs(title="Normalized distribution",
+       subtitle="Distribution of log prices",
+       x= "Log Price per night"
+       ) +
+  theme_stata() +
+  theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank())
+```
+
+### Correlation Analysis
+
+The correlation analysis serves as a basis for our regression analysis. Which variables might influence the price per night? Do we have strong correlations between potential explanatory variables which could lead to multicollinearity and hence lead to imprecise estimations of the coefficients? And do scatterplots indicate non-linear relationships between explanatory variables and prices?   
+
+```{r,correlation}
+ 
+corr_df<-listings_2000 %>% 
+  select(price_ln,
+         bathrooms,
+         bedrooms,
+         review_scores_rating,
+         prop_type_simplified,
+         room_type
+         )
+
+colnames(corr_df)<-c("Price per Night",
+                     "#Bathrooms",
+                     "#Bedrooms",
+                     "Average Review",
+                     "Property Type",
+                     "Room Type"
+                     )
+
+
+##ggpairs
+ggpairs(corr_df,lower = list(continuous = "smooth"))+
+  theme_stata() +
+  labs(title="Correlation of key variables in the data set",
+       subtitle="Correlation matrix based on sample") 
+
+```
+
+
+
+**Observations**
+
+The number of bathrooms and bedrooms seem to be a good predictor of prices. The number of bedrooms is highly correlated with number of bathrooms. If we include both as explanatory variables in our regression analysis, we could face problems caused by (imperfect) multicollinearity. We will discuss this later in the diagnostics section. Besides this, the boxplots show us that room types and property types influence prices. This motivates us to include those variables as predictors in our regression analysis. Other variables, such as the average review score, do not seem to be good predictors for prices. We can further see that some relationships appear to be non-linear. Let's have a closer look at them.
+
+
+```{r, trying_x_squared}
+
+#Scatterplot bathroom / price relationship
+listings_2000 %>% 
+  ggplot(aes(x=bathrooms,y=price_ln)) + 
+  labs(title = "Price - Bathrooms relationship",
+       x="Number of Bathrooms",
+       y="Log price") +
+  geom_point() + 
+  theme_stata() +
+  geom_smooth(formula = (y ~ sqrt(x)))
+
+#Scatterpolot bedroom / price relationship
+listings_2000 %>% 
+  ggplot(aes(x=bedrooms,y=price_ln)) + 
+  labs(title = "Price - Bedrooms relationship",
+       x="Number of Bedrooms",
+       y="Log price") +
+  geom_point() + 
+  theme_stata() +
+  geom_smooth(formula = (y ~ sqrt(x)))
+
+```
+The relationship between both bathroom-prices and bedrooms-prices can be described as non-linear. This insight motivates us to included squared terms for bathrooms and bedrooms to capture the non-linear effects. 
+
+Further, it might be worth checking for interacting effects between the explanatory variables, i.e. checking whether any of the correlations appear to be conditional on the value of a categorical variable. 
+Below, we do this for the bathrooms-prices and bedrooms-prices relationship depending on the property type.
+
+```{r, interacting_terms}
+#Price - bathroom by property type
+listings_2000 %>%  
+  ggplot(aes(x=bathrooms,y=price_ln)) + 
+  labs(title = "Price - Bathrooms relationship, by property type",
+       x="Number of Bathrooms",
+       y="Log price") +
+  facet_wrap(~prop_type_simplified) +
+  geom_point() + 
+  theme_stata()
+
+
+#Price - bedroom by property type
+listings_2000 %>%  
+  ggplot(aes(x=bedrooms,y=price_ln)) + 
+  labs(title = "Price - Bedrooms relationship, by property type",
+       x="Number of Bedrooms",
+       y="Log price") +
+  facet_wrap(~prop_type_simplified) +
+  geom_point() + 
+  theme_stata()
+
+```
+The non-linear relationships seen above motivate us to further explore the relationship between the explanatory variables. In the following, we again plot the bathroom-price and bedroom-price relationship, but this time for in respect to the categorial variables property type and room type. \ 
+
+The patterns suggest that the effects of bathroom and bedrooms indeed depend on the categorial variables. Based on this observation we introduce interaction terms in our regressions.
+
+# Mapping
+Before jumping into our regression analysis, let's have a look on Shanghai and see where the AirBnBs are located. 
+
+```{r, mapping}
+
+#we use the filtered data to map
+coloured_price <- colorBin("YlOrRd",
+                           listings_data_filtering$price,
+                           bins = c(min(listings_data_filtering$price),50,100,150,200,500,1000,2000,max(listings_data_filtering$price))
+                           )
+
+#ordered(listings_data_filtering$price)
+
+leaflet(data = listings_data_filtering) %>%
+  addProviderTiles("OpenStreetMap.Mapnik") %>%
+  addCircleMarkers(lng = ~longitude,
+                   lat = ~latitude,
+                   radius = 1,
+                   color = ~coloured_price(price),
+                   fillOpacity = 0.2,
+                   popup = ~listing_url,
+                   label = ~property_type, # here we continue using the original property_type
+                   ) %>%
+  addLegend("bottomright", pal = coloured_price, values = ~price,
+    title = "Price per night ($)",
+    labFormat = labelFormat(prefix = "$"),
+    opacity = 1)
+
+```
+
+
+# Regression analysis
+## Compulsory Regression Analysis
+First, we check the compulsory model1 and model2 (suggested in the project requirement) to have a overview about potential key variables determine the price for 4 nights.
+
+### Creating the Regression Models
+The following includes two models:
+
+* Model1: Variables include prop_type_simplified, number_of_reviews, and review_scores_rating
+* Model2: Model1 plus room_type
+
+```{r, Compulsory_Regression_Analysis}
+
+#Adding column prices_4_night, and changing prop type and room type as factors, taking logs
+listings_2000_4n <- listings_2000 %>% 
+  mutate(price_4_nights=price*4 +
+           cleaning_fee +
+           case_when(guests_included <= 1 ~ extra_people,
+                     TRUE ~ 0),
+         prop_type_factor=as.factor(prop_type_simplified),
+         room_type_factor=as.factor(room_type),
+         price_4_nights_ln=log(price_4_nights)
+         )
+
+#Checking new data frame
+head(listings_2000_4n %>% 
+  select(price_4_nights,guests_included,extra_people,cleaning_fee,accommodates,price_4_nights_ln),  n=20)  %>% 
+  kable() %>% 
+  kableExtra::kable_material_dark()
+
+# Checking whether dummy variables were transformed to factors successfully 
+contrasts(listings_2000_4n$prop_type_factor)
+contrasts(listings_2000_4n$room_type_factor)
+
+
+#Distribution of prices in logs
+listings_2000_4n %>% 
+  ggplot(aes(x=price_4_nights_ln)) +
+           geom_histogram() +
+  labs(title="Distribution of prices for 4 nights",
+       subtitle="2000 observations, cleaned data set,in natural logs",
+       x="Prices for 4 nights in logs") + theme_stata()
+
+
+#Model 1 using logs of price
+model1<-lm(price_4_nights_ln ~ review_scores_rating + 
+             number_of_reviews + 
+             prop_type_factor, 
+           data = listings_2000_4n
+           )
+
+model1 %>% tidy()  %>% 
+  kable() %>% 
+  kableExtra::kable_material_dark()
+
+
+#Model 2 using logs of price = Model 1 + room_type
+model2 <- lm(price_4_nights_ln ~ review_scores_rating + 
+             number_of_reviews + 
+             prop_type_factor +
+             room_type, 
+           data = listings_2000_4n
+           )
+model2 %>% tidy()  %>% 
+  kable() %>% 
+  kableExtra::kable_material_dark()
+
+
+```
+
+**Our findings and interpretation**   
+
+*Model 1*
+
+The coefficients for review score and number of reviews are not significant on the 5 percent level.
+Based on our findings, booking a villa will increase the price for 4 nights for two persons by 748 dollars compared to the booking of an apartment (baseline property type). On the other hand, switching from an apartment to a condo, will significantly reduce the prices by 388 dollars.
+Booking a house, or other room types will not significantly change the price for 4 nights compared to booking an apartment. 
+
+*Model 2*
+
+Incorporating room types into our regressions turns the coefficient for condos insignificant, suggesting that this coefficient captured partly the effects of room types in model 1. The baseline room type is `entire home`. Accordingly, the coefficients for ´private room´ and `shared room´ are negative and highly significant on the 1 percent level.
+
+
+
+### Diagnostics for Model 1 and Model 2
+
+We now run a diagnostics of these two models. We run two kinds of diagnostics. We use `vif()`, which outputs the Variance Inflation Factors for each explanatory variable, and `autoplot()`, which outputs four different graphs.
+
+```{r, Diagnostics_of_compulsory_Regression_Analysis}
+
+#Diagnostics of model1_ln
+autoplot(model1) + 
+  theme_stata() +
+  labs(title="Diagnostics for model 1") 
+
+car::vif(model1) %>% 
+  kable() 
+
+#Diagnostics of model2_lb
+autoplot(model2) + 
+  theme_stata() +
+  labs(title="Diagnostics for model 2") +
+  theme(axis.text.x=element_blank()) 
+
+car::vif(model2) %>% 
+  kable()
+
+```
+
+From the `vif()` analysis, neither of these models run into cnollinearity trouble as the VIFs are well below 5 for all variables. 
+
+
+**Understanding Autoplot**
+
+The `autoplot()` analysis gives us a lot of information. This function outputs 4 graphs. Before discussing our specific results, it is useful to take a moment to briefly understand how to interpret them. The information we describe below can be found [here](https://data.library.virginia.edu/diagnostic-plots/) and [here](http://www.sthda.com/english/articles/39-regression-model-diagnostics/161-linear-regression-assumptions-and-diagnostics-in-r-essentials/). 
+
+In general, when constructing linear regression models, we make a number assumptions about our data. 
+1. We assume that the relationship between our independent/explanatory variables, and our dependent/explained variable is linear (it comes with the name *linear* regression).
+2. We assume that our residual errors follow a normal distribution i.e. there is no underlying pattern there, they are random.
+3. Homoscedasticity: The variance of our residuals is constant across all values.
+4. Our observations are independent.
+
+If these assumptions are fulfilled, we have what is called a BLUE - short for Best Linear Unbiased Estimator.
+
+The four plots in `autoplot()` test whether these assumptions are warranted in our regression models.
+
+*Residuals vs Fitted* 
+
+This plot is used to test the first assumption above: do our variables exhibit a linear relationship? For a linear regression model, there should be no particular non-linear pattern to that graph. Ideally, it should show a horizontal trendline at 0.
+
+*Normal Q-Q* 
+
+This plot tests the second assumption: are our residual errors normally distributed? The closest the scatterplot is to the oblique dashed line, the more normally distributed our residual errors are.
+
+*Scale-Location*
+
+This plot tests for the third point: is the variance of our residuals constant? (Homoscedasticity). If so, this plot should show equally/randomly spread points around a horizontal trendline.
+
+*Constant Leverage: Residuals vs Factor Levels*
+
+This plot tests for outliers that would strongly influence our regression model. Typically, red dashed lines will show up on the plot which represents a boundary for when datapoints become influential (called Cook's Line). If points are outside the line, they are deemed influential, and otherwise not.
+
+**Analysing our own Autoplots**
+
+We are now ready to interpret our own `autoplot()` graphs.
+
+*Residuals vs Fitted*
+
+* Model 1: Though the trendline is fairly horizontal, the datapoints exhibits strong clustering and so the linearity assumption does not seem to hold
+* Model 2: Here the clustering is reduced compared to model one, but still present. This is better, but not ideal
+
+*Normal Q-Q* 
+
+Model 1 fits the dashed line less well than model 2 does. It seems the residual errors for model 2, except for the more extreme values, fit the normal distribution quite well.
+
+*Scale-Location* 
+
+As for the first graph, both models exhibit clustering, though model 2 less than 1. The trendline for model 1 is not horizontal, and so we have heteroscedasticity problems here. Model 2 is more horizontal, though not quite for larger fitted values. There are most likely also some heteroscedasticity problems here.
+
+*Constant Leverage: Residuals vs Factor Levels* 
+
+Cook's lines are not visible on either models, thus it seems no outliers particularly affect our regressions. This may be due to us dealing with outliers earlier during the EDA.
+
+
+## Additonal regressions
+After having carried out our main regressions above, we would now like to further investigate our data set and find the best possible model to predict the price for 4 nights for two people. 
+
+From the previous analysis, we find that it would be better if we adopt log of price. Thus, for the following analysis, we all use log of price as the dependent variable.
+
+Let's check the full regression model, using variables that are potentially related to the price. 
+```{r, Additonal_Regressions_with diagnostics}
+
+#Including additional explanatory variables
+model3<- lm(price_4_nights_ln ~ review_scores_rating + 
+            number_of_reviews + 
+            prop_type_factor + 
+            room_type +
+            bathrooms +
+            bedrooms +
+            beds +
+            neighbourhood_simplified +
+            accommodates + 
+            host_is_superhost +
+            is_location_exact + 
+            cancellation_policy,
+           data = listings_2000_4n
+           )
+model3 %>% 
+  tidy()  %>% 
+  kable() %>% 
+  kableExtra::kable_material_dark()
+
+car::vif(model3) %>% 
+  kable()
+
+summary(model3) 
+  
+
+anova(model3)  %>% 
+  kable() %>% 
+  kableExtra::kable_material_dark()
+```
+Recalling our correlation matrix we see that some explanatory variables are highly correlated. In particular, for all pair combinations, Bedrooms, Bathrooms, and Accommodates all have correlations higher than 0.65. This makes sense given they are all measures of how many people can live in the house. For this reason, we debated excluding one or two of these variables so that we wouldn't run into collinearity trouble. We decided not to exclude these variables for two following reasons:
+1. According to standard practice, it is usually common to set the [cutoff correlation value at 0.8](https://stats.idre.ucla.edu/other/mult-pkg/faq/general/faqhow-do-i-interpret-a-regression-model-when-some-variables-are-log-transformed/). 
+2. We will investigate the Variance Inflation Factors for these variables later in our diagnostics, and these should shed more insight on collinearity.
+
+
+## Our best model - Diagnostics, collinearity, summary tables
+
+### Finding Our Best Model
+After going through a rough overview of the full model, in order to find out the best model, we plan to test and add variables one by one, and then use the summary table to compare them.
+```{r, Finding_Our_Best_Model}
+
+#model1 just includes one variable: bedrooms
+model_1<- lm(price_4_nights_ln ~ 
+               bedrooms, 
+             data = listings_2000_4n)
+
+#model2 add one more variable: bathrooms
+model_2<- lm(price_4_nights_ln ~ 
+               bedrooms + 
+               bathrooms,
+             data = listings_2000_4n)
+#check VIF
+car::vif(model_2) %>%
+  kable()
+
+#model3 add one more variable: beds
+model_3<- lm(price_4_nights_ln ~ 
+               bedrooms + 
+               bathrooms + 
+               beds, 
+             data = listings_2000_4n)
+#check VIF
+car::vif(model_3) %>%
+  kable()
+
+#model4 add one more variable: accommodates
+model_4<- lm(price_4_nights_ln ~ 
+               bedrooms + 
+               bathrooms + 
+               beds + 
+               accommodates, 
+             data = listings_2000_4n)
+#check VIF
+car::vif(model_4) %>%
+  kable()
+
+#model5 add one more variable: property type
+model_5<- lm(price_4_nights_ln ~ 
+               bedrooms + 
+               bathrooms + 
+               beds + 
+               accommodates + 
+               prop_type_factor, 
+             data = listings_2000_4n)
+car::vif(model_5) %>%
+  kable()
+
+#model6 add one more variable: room type
+model_6<- lm(price_4_nights_ln ~ 
+               bedrooms + 
+               bathrooms + 
+               beds +
+               accommodates + 
+               prop_type_factor + 
+               room_type, 
+             data = listings_2000_4n)
+car::vif(model_6) %>%
+  kable()
+
+#model7 add one more variable: neighbourhood
+model_7<- lm(price_4_nights_ln ~ 
+               bedrooms + 
+               bathrooms + 
+               beds +
+               accommodates + 
+               prop_type_factor + 
+               room_type +
+               neighbourhood_simplified, 
+             data = listings_2000_4n)
+car::vif(model_7) %>%
+  kable()
+
+#model8 add one more variable: review scores rating
+model_8<- lm(price_4_nights_ln ~ 
+               bedrooms + 
+               bathrooms + 
+               beds +
+               accommodates + 
+               prop_type_factor + 
+               room_type +
+               neighbourhood_simplified +
+               review_scores_rating, 
+             data = listings_2000_4n)
+car::vif(model_8) %>%
+  kable()
+
+#model9 add one more variable: number of reviews
+model_9<- lm(price_4_nights_ln ~ 
+               bedrooms + 
+               bathrooms + 
+               beds +
+               accommodates + 
+               prop_type_factor + 
+               room_type +
+               neighbourhood_simplified + 
+               review_scores_rating + 
+               number_of_reviews, 
+             data = listings_2000_4n)
+car::vif(model_9) %>%
+  kable()
+
+
+#model10 add one more variable: cancellation policy
+model_10<- lm(price_4_nights_ln ~ 
+               bedrooms + 
+               bathrooms + 
+               beds +
+               accommodates + 
+               prop_type_factor + 
+               room_type +
+               neighbourhood_simplified +
+               review_scores_rating + 
+               number_of_reviews +
+               cancellation_policy, 
+             data = listings_2000_4n)
+car::vif(model_10) %>%
+  kable()
+
+#model11 add one more variable: host_is_superhost
+model_11<- lm(price_4_nights_ln ~ 
+               bedrooms + 
+               bathrooms + 
+               beds +
+               accommodates + 
+               prop_type_factor + 
+               room_type + 
+               neighbourhood_simplified + 
+               review_scores_rating + 
+               number_of_reviews +
+               cancellation_policy +
+               host_is_superhost,
+             data = listings_2000_4n)
+car::vif(model_11) %>%
+  kable()
+
+#model12 add one more variable: is_location_exact
+model_12<- lm(price_4_nights_ln ~ 
+               bedrooms + 
+               bathrooms + 
+               beds +
+               accommodates + 
+               prop_type_factor + 
+               room_type + 
+               neighbourhood_simplified + 
+               review_scores_rating + 
+               number_of_reviews +
+               cancellation_policy +
+               host_is_superhost +
+               is_location_exact,
+             data = listings_2000_4n)
+car::vif(model_12) %>%
+  kable()
+
+#Introducing quadratic terms 
+listings_2000_4n_sq <- listings_2000_4n %>% 
+  mutate(bathrooms_sq=bathrooms^2,
+         bedrooms_sq=bedrooms^2)
+
+
+#model13 quadratic term bathroom
+model_13<- lm(price_4_nights_ln ~ bedrooms + 
+               bathrooms + 
+               bathrooms_sq +
+               beds +
+               accommodates + 
+               prop_type_factor + 
+               room_type + 
+               neighbourhood_simplified + 
+               review_scores_rating + 
+               number_of_reviews +
+               cancellation_policy +
+               host_is_superhost +
+               is_location_exact,
+             data = listings_2000_4n_sq)
+car::vif(model_13) %>%
+  kable()
+
+#model14 quadratic term bedroom
+model_14<- lm(price_4_nights_ln ~ 
+               bedrooms + 
+               bedrooms_sq +
+               bathrooms + 
+               bathrooms_sq +
+               beds +
+               accommodates + 
+               prop_type_factor +
+               room_type + 
+               neighbourhood_simplified + 
+               review_scores_rating + 
+               number_of_reviews +
+               cancellation_policy +
+               host_is_superhost +
+               is_location_exact,
+             data = listings_2000_4n_sq)
+car::vif(model_14) %>%
+  kable()
+
+#model15 interaction term bedroom-prop_type
+model_15<- lm(price_4_nights_ln ~ 
+               bedrooms + 
+               bedrooms_sq +
+               bathrooms + 
+               bathrooms_sq +
+               beds +
+               accommodates + 
+               prop_type_factor +
+               room_type + 
+               neighbourhood_simplified + 
+               review_scores_rating + 
+               number_of_reviews +
+               cancellation_policy +
+               host_is_superhost +
+               is_location_exact +
+               bedrooms:prop_type_factor,
+             data = listings_2000_4n_sq)
+car::vif(model_15) %>%
+  kable()
+
+#model16 interaction term bedroom-prop_type
+model_16<- lm(price_4_nights_ln ~ 
+               bedrooms + 
+               bedrooms_sq +
+               bathrooms + 
+               bathrooms_sq +
+               beds +
+               accommodates + 
+               prop_type_factor +
+               room_type + 
+               neighbourhood_simplified + 
+               review_scores_rating + 
+               number_of_reviews +
+               cancellation_policy +
+               host_is_superhost +
+               is_location_exact +
+               bedrooms:prop_type_factor +
+               bathrooms:prop_type_factor,
+             data = listings_2000_4n_sq)
+car::vif(model_16) %>%
+  kable()
+
+#we compare all the models together using huxtable
+comparison1 <- huxreg(model_1, model_2, model_3, model_4, model_5, model_6, model_7, model_8, model_9, model_10, model_11, model_12, model_13, model_14, model_15, model_16,
+                 statistics = c('#observations' = 'nobs', 
+                                'R squared' = 'r.squared', 
+                                'Adj. R Squared' = 'adj.r.squared', 
+                                'Residual SE' = 'sigma'), 
+                 bold_signif = 0.05, 
+                 stars = NULL
+) %>% 
+  set_caption('Comparison of models')
+
+comparison1
+```
+**Our findings and explanations**
+We find that by adding additional explanatory variables the adjusted Rsquared value (in the following: Rsquared) increases steadily. In particluar, Rsquared jumps after adding 
+
+* `accommodates` in model 4
+* `room_types` in model 6
+* `review_scores_rating` in model 8
+
+Using the command *tidy()* we see that `review_scores_rating` is not significant as an explanatory variable, but it still increases the Rsquared. This insight motivates us to not drop insignificant explanatory variables, but to keep them as controls. 
+
+Our EDA section motivates us to account for non-linear and interacting effects. Model 13 to 16 incorporate these effects. However, the inclusion of additional explanatory variables and the introduction of squared terms and interaction terms increase Rsquared only slightly (from 0.51 in model 8 to 0.53 in model 16). Overall, model 16 is our most precise model, but at the same time the most complicated model, making it challenging to understand and to interpret. 
+
+Before moving on, it is worth mentioning the VIF diagnostics we have performed above. Until model 12, our VIFs are well behaved, with the largest value being assigned to the `bedrooms` variable, with a VIF of 4.44. This is still under 5, in accordance with our correlations discussed previously which were all less than 0.8, and thus our models do not suffer of any harsh collinearity issues. However, models 13-16 seem to have astronomically larger VIF values, reaching 86,018 for the interaction term between bathrooms and property type! At first glance, this looks very worrying as the usual benchmark for collinearity issues arising is between 5-10. However, after some thought, it is natural that we have such large VIF values - our non-linear and our interaction terms are direct functions of some of our other variables! Since we have purposefully included these terms in our analysis to capture non-linear/interaction effects, these VIFs can in fact be disregarded. Furthermore, our models improve after using these terms, and our diagnostics autoplots get better as well (as will be shown just below), corroborating our use of these terms.
+
+### Interpreting Interaction Terms
+
+We have included interaction terms in regression models 15 and 16. Interaction terms capture conditional relationships. For example, let's consider the term `bedrooms:prop_type_factor`. This term captures the effect of bathroom number on price, conditional on which property type we are investigating. Below we visualise the effect of `bedrooms:prop_type_factor`.
+
+```{r, interaction_plots}
+#plotting the overall effect of interaction terms between bedrooms and property type
+interact_plot(model_16, pred = bedrooms, modx = prop_type_factor) + 
+  theme_stata() +
+  labs(title="Number of bedrooms has different effects depending on property type",
+       x="Number of Bedrooms",
+       y="Price for 4 nights in logs")
+
+```
+
+It seems that each property type shows a positive linear relationship between the log of price and number of bathrooms It seems like Villa is the priciest, which makes sense, then House and Condos are very close to each other, Apartment is in fourth most of the time and Other comes last. 
+
+It seems like the lines have slightly different slopes. Other has the smallest slope, thus the price changes the least with additional bedrooms in that category. Since it includes all other property types this is hard to interpret. The only thing we can say just off of inspecting Other, is that our Apartments, Condos, Houses and Villas all seem to have a slighly stronger responses in price than the norm, with respect to change in number of bedrooms. 
+
+When the number of bedrooms becomes small, it seems like the graphs intersect, and for instance Condos become less expensive than Apartments.
+
+### Further Diagnostics
+
+**Running some further diagnostics**
+To illustrate the progression of our above trial and error, let us run some diagnostics. We will run diagnostics on `model_1`, `model_8` and `model_16` by creating diagnostic plots using the `autoplot()` function. This should capture the improvements of our models over each iteration. In particular, the difference between the latter 2 models should show us the effect of adding our non-linear variables and interaction terms.
+
+```{r, running_some_diagnostics}
+autoplot(model_1) + 
+  theme_stata() 
+
+autoplot(model_8) + 
+  theme_stata() +
+  theme(axis.text.x=element_blank()) 
+
+autoplot(model_16) + 
+  theme_stata() +
+  theme(axis.text.x=element_blank()) 
+
+```
+
+**Model 1 Autoplot Analysis**
+
+As expected, when running `autoplot()` diagnostics on Model 1, the output plots are not ideal.
+
+*Residuals vs Fitted*
+
+Our trendline is not horizontal and heavy data clustering is present. Our linear assumption is not satisfied
+
+*Normal Q-Q*
+
+This is quite decent. Most values close to zero seem normally distributed, with some deviation for edge values.
+
+*Scale-Location*
+]
+Our trendline is not horizontal and heavy data clustering is present. The homoscedasticity assumption is not satisfied.
+
+*Residuals Leverage: Residuals vs Factor Levels*
+
+No Cook's Lines are visible and so it seems no outliers are particularly affecting the data (though there do seem to be outliers away from the main cluster of datapoints) 
+
+
+**Model 8 Autoplot Analysis**
+
+Here our model begins looking more robust.
+
+*Residuals vs Fitted*
+
+The trendline seems mostly horizontal and around zero. Clustering is much less present than in any of the previous diagnostics, though there does seem to be some clustering still persisting. Our data may not be impeccably linear, but this starts to be linear enough for our scope.
+
+*Normal Q-Q*
+
+Overall, except for the edge values, most of the data seems to be normally distributed. 
+
+*Scale-Location*
+
+As for the first graph, there is clear improvement over model 1. Clustering is much less present and the trendline is much more horizontal. We have much less heteroscedasticity than previously, although again, there is some clustering present, so that suggests our data points are not entirely random.
+
+*Constant Leverage: Residuals vs Factor Levels*
+
+Cook's lines are not visible on our plot, thus it seems no outliers particularly affect our regressions.
+
+
+**Model 16 Autoplot Analysis**
+
+This seems to be our most robust model.
+
+*Residuals vs Fitted*
+
+There is improvement from model 8. The trendline seems even more horizontal and close to zero, and clustering reduced even further, though there does seem to be a little clustering (around fitted values of 7-8) still persisting. This data is even closer to linearity.
+
+*Normal Q-Q*
+
+Overall, except for the edge values, most of the data seems to be normally distributed. 
+
+*Scale-Location*
+
+As for the first graph, there is clear improvement over model 8. Clustering is less present and the trendline is slightly more horizontal. We have slightly less heteroscedasticity than in model 8 it seems, although there is still some clustering present, which again suggests our data points are not entirely random.
+
+*Constant Leverage: Residuals vs Factor Levels*
+
+Cook's lines are not visible on our plot, thus it seems no outliers particularly affect our regressions.
+
+
+# Prediction using the best model identified
+
+## Defining our best model 
+
+**Find Airbnb’s that are apartment with a private room, have at least 10 reviews, and an average rating of at least 90. Use your best model to predict the total cost to stay at this Airbnb for 4 nights. Include the appropriate 95% interval with your prediction. Report the point prediction and interval in terms of price_4_nights** 
+
+As shown above, our model with the highest adjusted Rsquared value is model 16. This model includes interaction terms and quadratic terms to account for non-linear and interacting effects. As the adj. Rsquared value only increases slightly compared to the much simpler model 8 as we show below, thus we will use model 8 and slightly adjust it for the squared terms to predict the price for 4 nights. Model 8 is much easier to understand and allows us a more convenient interpretation of the coefficients. 
+
+```{r, Rsquared_visualization}
+
+#select the row with Rsquared data from the huxreg table
+rsq<-comparison1[64,]
+
+
+#define a vector with model
+specification <- c("Model 1","Model 2","Model 3","Model 4","Model 5","Model 6","Model 7","Model 8","Model 9","Model 10","Model 11","Model 12","Model 13","Model 14","Model 15","Model 16")
+
+specification_factor <- factor(specification, levels = specification)
+
+
+
+#create dataframe with model number and corresponding Rsquared value
+rsq_df<-as.data.frame(t(rsq[-1])) %>%
+  mutate(Rsquared=parse_number(`3.1`),Specification=specification_factor) %>% 
+  select(-1)
+
+
+#plot the Rsquared
+rsq_df %>% 
+  ggplot(aes(x=Specification,y=Rsquared)) + 
+  geom_col() + 
+  theme_stata() + 
+  labs(title="The R-squared value hardly increases after specification 8",
+      subtitle="Adjusted R-squared for every specification",
+      x="",
+      y="Adjusted R-squared")
+
+```
+
+
+We thus define our best model as described above - adjusting model 8 to include squared terms:
+
+```{r, adjusted model 8}
+
+#The best model is:
+model_best<- lm(price_4_nights_ln ~ 
+               bedrooms + 
+               bedrooms_sq +
+               bathrooms + 
+               bathrooms_sq +
+               beds +
+               accommodates + 
+               prop_type_factor +
+               room_type + 
+               neighbourhood_simplified + 
+               review_scores_rating + 
+               number_of_reviews,
+               data = listings_2000_4n_sq)
+summary(model_best)
+```
+## Creating our Baseline Prediction
+
+We would like to use our model to predict the prices of AirBnBs according to different explanatory variables' values in our regression model.
+
+We begin by creating a general function to do so, and defining the baseline case as defined in the assignment guidelines:
+
+* number of bedrooms = 1
+* number of bathrooms = 1
+* 1 bed
+* Average review score of 90
+* Apartment
+* Private Toom
+* Central Neighbourhood
+* accommodates 2
+* number of reviews = 10
+* Average Review = 90
+
+```{r,predictions_baseline}
+
+
+#define a function which outputs a prediction using our best regression model with set numbers of bedrooms, bathrooms, beds, accomodates and number of reviews.
+#It takes as input:
+  #x1 = property type
+  #x2 = room type
+  #x3 = neighbourhood
+  #x4 = average review score
+#It outputs the following organised as a dataframe:
+  #prediction for the price of the AirBnB over 4 nights (we take exponential to convert it back to dollar price)
+  #upper 95% CI
+  #lower 95% CI
+
+predictions_fn <- function(x1,x2,x3,x4) 
+  {as.data.frame(
+    exp(
+      predict(model_best, data.frame(bedrooms =1,
+                               bedrooms_sq=1,
+                               bathrooms=1,
+                               bathrooms_sq=1,
+                               beds=1,
+                               accommodates=2, #assume a 1 bedroom flat can accommodate 2 people max usually
+                               prop_type_factor= x1,
+                               room_type= x2,
+                               neighbourhood_simplified=x3,
+                               number_of_reviews = 10, 
+                               review_scores_rating=x4),
+        interval = "confidence", level=0.95)
+      ),
+    )
+  }
+
+
+#Prediction 1: baseline 
+prediction <- predictions_fn(x1 = "Apartment", x2 = "Private room", x3 = "central", x4 = 90)
+prediction %>% 
+  kable() %>% 
+  kableExtra::kable_material_dark()
+
+```
+
+The above `prediction` serves as our baseline prediction. We assume that the individuals are a typical tourists visiting Shanghai for a medium-length stay of 4 nights. They are looking for a private room in an apartment, located in the central area in order to be close to sightseeing spots: Besides that, a good average rating of 90 is a must with a minimum of 10 reviews. Further we assume that they need only one bed and one bathroom. 
+Given these inputs, our model predicts a very narrow price range of 1101 to 1186 on a 95 percent confidence level. 
+
+
+## Predictions for different Neighbourhoods
+
+In this prediction, we want to find out how the price range changes when the tourists book the properties in different areas of the city. The most expensive rentals on average are located on the island in the north-eastern part of Shanghai (Changxing, see Map). Booking a private room in an apartment there forces the tourists to pay a significant premium resulting in an expected price range between 1176 to 1332. As expected, rentals farther away from the city centre (half-central, suburb) reduces the price per night significantly.
+
+```{r, predictions_neighbourhoods}
+#define neighbourhood vector
+neigh_vect <- c("island", "central", "half-central", "suburb")
+
+#finding predictions using our predictions_fn() function
+prediction_neigh <- predictions_fn(x1 = "Apartment", x2 = "Private room", x3 = neigh_vect, x4 = 90) 
+                                          
+
+#preparing data frame for plot
+prediction_neigh_ready <- prediction_neigh %>% 
+  mutate(neighbourhoods = factor(neigh_vect, levels = neigh_vect))
+
+
+prediction_neigh_ready %>% 
+  kable() %>% 
+  kableExtra::kable_material_dark()
+
+#plotting our predictions
+prediction_neigh_plot<-prediction_neigh_ready %>% 
+  ggplot(aes(x=neighbourhoods,
+             y=fit
+             )
+         ) +
+  labs(title = "The most expensive neighbourhood in Shanghai isn't even in Shanghai City!",
+       subtitle = "It's on an adjacent island called Chongming island",
+       y = "predicted price over 4 nights ($)") +
+  geom_col() +
+  geom_errorbar(width=0.2, aes(ymin=lwr, 
+                               ymax=upr)
+                ) +
+  theme_stata()
+
+prediction_neigh_plot
+```
+
+## Predictions for different Property Types
+
+In this prediction, we vary the property types to show how the price range changes when the two individuals decide to choose a larger or smaller accommodation, given that all other perimeters remain unchanged to prediction 1. Again, apartment serves as the baseline property. As expected, booking a house or a villa will increase the price for 4 nights drastically. On the other hand, choosing a condominium will allow the two individuals to spend more money on dinners. The category “other” captures all property types not belonging into the other buckets, so it could potentially capture both a castle and a tent. Hence, it is difficult to interpret.
+
+```{r, predictions_prop_types}
+#define property type vector
+prop_type_vect <- c("Villa", "House", "Apartment", "Condominium", "Other")
+
+#calculate predictions
+prediction_prop <- predictions_fn(x1 = prop_type_vect, x2 = "Private room", x3 = "central", x4 = 90) 
+                                    
+prediction_prop_ready <- prediction_prop %>% 
+  mutate(`property type` = factor(prop_type_vect, levels = prop_type_vect))
+
+prediction_prop_ready %>% 
+  kable() %>% 
+  kableExtra::kable_material_dark()
+
+prediction_prop_plot<-prediction_prop_ready %>% 
+  ggplot(aes(x=`property type`,
+             y=fit
+             )
+         ) +
+  labs(title = "Villas are the most expensive, and Condos are the cheapest",
+       subtitle = "According to our regression model",
+       y = "predicted price over 4 nights ($)",
+       x = "") +
+  geom_col() +
+  geom_errorbar(width=0.2, aes(ymin=lwr, 
+                               ymax=upr)
+                ) +
+  theme_stata()
+
+prediction_prop_plot
+
+```
+
+## Prediction Room Types
+
+The idea behind this prediction is pretty similar to prediction the previous one. We want to vary one variable of interest, room types, while keeping all other variables constant. The output reveals that the room type is one of the major drivers of the prices. When switching from a private room to a shared room, the two tourists must expect a price range of only 445 to 528 for 4 nights! This is a significant cheaper accommodation than having a private room. On the other hand, when they want to rent an entire home/apartment, the price range rises to 1521 to 1617.
+
+
+```{r, predictions_room_types}
+
+room_type_vect <- c("Entire home/apt", "Private room", "Shared room")
+
+prediction_room <- predictions_fn(x1 = "Apartment", x2 = room_type_vect, x3 = "central", x4 = 90) 
+                                            
+prediction_room_ready <- prediction_room %>% 
+  mutate(`room type` = factor(room_type_vect, levels = room_type_vect))
+
+prediction_room_ready %>% 
+  kable() %>% 
+  kableExtra::kable_material_dark()
+
+prediction_room_plot<-prediction_room_ready %>% 
+  ggplot(aes(x=`room type`,
+             y=fit
+             )
+         ) +
+  labs(title = "Entire homes are much more expensive to rent than shared rooms",
+       subtitle = "According to our regression model",
+       y = "predicted price over 4 nights ($)",
+       x = "") +
+  geom_col() +
+  geom_errorbar(width=0.2, aes(ymin=lwr, 
+                               ymax=upr)
+                ) +
+  theme_stata()
+
+prediction_room_plot
+
+```
+
+
+# Conclusion
+
+To conclude, we have done a great deal of regression analysis. We began by carrying out some EDA. This included getting familiar with out data, cleaning it, sampling it, and manipulating it. We also mapped our data on a real map of Shanghai, to visualise and understand our data better. Then, we ran some initial regression models. From these, we concluded that clearly, adding more variables increases the accuracy of our model. Further, we found that the most significant variables to predict the price for 4 nights for 2 people were: number of reviews (below 5% p-value), property types (below 5% p-value), room types (below 1% p-value), bedrooms (below 1% p-value), neighbourhoods (below 1% or 5%, depends), accomodates (below 1% p-value), host is superhost (below 1% p-value). 
+
+After that, we moved on to searching for our best regression model. After much trial and error, we arrived to `model_16`, which includes squared terms and interaction terms in the independant/explanatory variables. We concluded that this model had an adjusted Rsquared value of 0.53, with mostly the same significant variables as above. We also concluded that even though a variable might not be significant, it may make the regression model more accurate by painting a more complete picture of our data (i.e. includes more effects). Here, we had to be careful of collinearity, which arises when two or more independant variables are highly correlated. We check VIFs in our diagnostics, and found that until we added squared and interaction terms, we were not affected by collinearity (VIF<5). However, once we added those terms, our VIFs, skyrocketed. We concluded this was an artifical effect caused by including independent variables which were functions of other independent variables (e.g. bedrooms and bedrooms_sq), and this was not an issue. Then, we ran autoplot diagnostics on our models, and found that `model_16` adhered most out of our models to the assumptions of linearity, homoskedascticity, and normal distribution of the residuals. It is thus our most powerful model.
+
+Finally, we used our regression models to predict the `price_4_nights` that one should expect, if wanting to rent an AirBnB in Shanghai, according to some fixed variables. We produced a benchmark prediction of \$1101 (with 95% CIs of 1023-1186). We then compared this benchmark across different categorical variables. Namely, `prop_type`, `room_type`, and `neighbourhoods`. As expected, for property types, our model predicts Villas to be most expensive (\$1609). We also find Condos are most likely to be chepeast at \$977. For room types, we found that price depends on this variable strongly. The most expensive room type by far is  `Entire home/apt` with an expected price of \$1521, whilst shared rooms go for around \$445. Finally, concerning neighbourhoods, it seems like Chongming Island is the most expensive part of town, despite actually being out of town! Apartments in Chongming islands according to our model would go for an expected \$1176. Then central Shanghai is second most expensive - most touristic area. Finally we find that the suburbs are the cheapest, which makes sense given there wouldn't be much to do in these areas and so they would be in lower demand, with expected prices of \$761.
+
+
+
+

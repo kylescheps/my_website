@@ -1,12 +1,12 @@
 ---
-title: Project 1
+title: Yield Curve Invesion
 author: Kyle Coding R
 date: '2020-10-20'
 slug: project-1
 categories: []
 tags: []
 description: ''
-image: ''
+image: 'yield_curve_parable.jpg'
 keywords: ''
 draft: no
 ---
@@ -45,8 +45,6 @@ library(openintro)
 library(tidyquant)
 ```
 
-
-# Challenge 1: Yield Curve inversion
 
 Every so often, we hear warnings from commentators on the "inverted yield curve" and its predictive power with respect to recessions.
 

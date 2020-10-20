@@ -92,22 +92,22 @@ disqusShortname = ""
     # Display your showcases here.
     
     [[params.tiles.showcase]]
-      title = "Aliquam"
-      subtitle = "Ipsum Dolor Sit Amet"
+      title = "About Me"
+      subtitle = ""
+      image = ""
+      url = ""
+
+    [[params.tiles.showcase]]
+      title = "Modelling US Yield Curves"
+      subtitle = ""
       image = ""
       url = "Projects/project-1"
 
     [[params.tiles.showcase]]
-      title = "Tempus"
-      subtitle = "Feugiat Amet Tempus"
-      image = "pic02.jpg"
-      url = "blogs/tempus"
-
-    [[params.tiles.showcase]]
-      title = "Magna"
-      subtitle = "Lorem Etiam Nullam"
-      image = "pic03.jpg"
-      url = "blogs/magna"
+      title = "AirBnB Regression Analysis"
+      subtitle = ""
+      image = ""
+      url = "Projects/project-2"
 
     [[params.tiles.showcase]]
       title = "Ipsum"
