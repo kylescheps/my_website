@@ -37,7 +37,7 @@ disqusShortname = ""
 
   # Navigation Section
   [params.navigation]
-    title = "My website"
+    title = "Home"
     subtitle = ""
     menu = "Menu"
     # Optional logo as brand stored in img/
@@ -71,9 +71,9 @@ disqusShortname = ""
   [params.banner]
     # To change the background image on the homepage banner, replace 'banner.jpg' in
     # the 'static/img' folder.
-    title = "Hi, my name is Kyle"
-    subtitle = "This is my portfolio website"
-    buttonText = "Get Started"
+    title = "Welcome to my website! I'm Kyle :)"
+    subtitle = "Here you will find a selection of the finest data analytics projects I've done in R - handpicked just for you."
+    buttonText = "Have a look around!"
 
 
   # Tiles Section
@@ -128,9 +128,9 @@ disqusShortname = ""
   # Section Type Two
   [params.two]
     enable = true
-    title = "Here you can find a small summary for each of the projects"
+    title = "Here you will find a short summary of each of my projects."
     subtitle = """These were carried out in Rmarkdown."""
-    buttonText = "Get Started"
+    buttonText = "Check them out"
     url = "Projects"
 
 
